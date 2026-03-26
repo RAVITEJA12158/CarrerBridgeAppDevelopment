@@ -28,16 +28,21 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   late Animation<double> _fadeAnim;
 
   // ================= REQUESTS =================
+  // Pending connection requests where this alumni is the target
   List<Map<String, dynamic>> _requests = [];
   bool _requestsLoading = true;
   StreamSubscription? _requestsSub;
 
   // ================= ACCEPTED =================
+  // Accepted connections — we read from 'user' collection's acceptedAlumni array
+  // but we also listen to connectionRequests for the accepted list.
+  // Since student's `acceptedAlumni` stores alumniEmail/alumniId/alumniName,
+  // we query connectionRequests with status=accepted to get student details.
   List<Map<String, dynamic>> _accepted = [];
   StreamSubscription? _acceptedSub;
 
   // ================= TAB =================
-  int _currentTab = 0; // 0 = Home, 1 = Requests, 2 = Connections, 3 = Profile
+  int _currentTab = 0;
 
   @override
   void initState() {
@@ -69,20 +74,22 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
+      // Collection is 'alumini' (matching your Firestore)
       final doc = await FirebaseFirestore.instance
           .collection('alumini')
           .doc(user.uid)
           .get();
 
       if (doc.exists && mounted) {
+        final data = doc.data()!;
         setState(() {
-          name = doc['name'] ?? 'Alumni';
-          email = user.email ?? '';
-          imageUrl = doc['imageUrl'] ?? '';
-          company = doc['company'] ?? '';
-          designation = doc['designation'] ?? '';
-          batch = doc['batch'] ?? '';
-          phone = doc['phone'] ?? '';
+          name = data['name'] ?? 'Alumni';
+          email = data['email'] ?? user.email ?? '';
+          imageUrl = data['imageUrl'] ?? '';
+          company = data['company'] ?? '';
+          designation = data['designation'] ?? '';
+          batch = data['batch'] ?? '';
+          phone = data['phone'] ?? '';
         });
       }
     } catch (e) {
@@ -139,6 +146,8 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   }
 
   // ================= ACCEPTED LISTENER =================
+  // Listens to connectionRequests where status='accepted' for this alumni.
+  // This gives us studentName + studentEmail directly from the request doc.
   void _startAcceptedListener() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -161,51 +170,78 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   // ================= ACCEPT =================
   Future<void> _acceptRequest(Map<String, dynamic> req) async {
     try {
+      final currentUser = FirebaseAuth.instance.currentUser!;
+
+      // 1. Update connectionRequests status to accepted
       await FirebaseFirestore.instance
           .collection('connectionRequests')
           .doc(req['id'])
           .update({'status': 'accepted'});
 
+      // 2. Add this alumni's details to the student's acceptedAlumni array
+      //    Student is in 'user' collection (your Firestore structure)
       await FirebaseFirestore.instance
           .collection('user')
           .doc(req['studentId'])
           .update({
             'acceptedAlumni': FieldValue.arrayUnion([
               {
-                'alumniId': FirebaseAuth.instance.currentUser!.uid,
+                'alumniId': currentUser.uid,
                 'alumniName': name,
-                'alumniEmail': email,
+                'alumniEmail': email, // uses email from alumni's 'alumini' doc
               },
             ]),
           });
 
-      await sendEmail(req['studentEmail']);
+      // 3. Save student email to this alumni's connectedStudents array in 'alumini' collection
+      await FirebaseFirestore.instance
+          .collection('alumini')
+          .doc(currentUser.uid)
+          .update({
+            'connectedStudents': FieldValue.arrayUnion([
+              req['studentEmail'] ?? '',
+            ]),
+          });
+
+      // 4. Send email notification to the student
+      if (req['studentEmail'] != null &&
+          (req['studentEmail'] as String).isNotEmpty) {
+        await sendEmail(req['studentEmail']);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Accepted & Email Sent")),
+          const SnackBar(
+            content: Text("✅ Accepted & Email Sent"),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
+      debugPrint("Accept Error: $e");
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        );
       }
     }
   }
 
   // ================= REJECT =================
   Future<void> _rejectRequest(Map<String, dynamic> req) async {
-    await FirebaseFirestore.instance
-        .collection('connectionRequests')
-        .doc(req['id'])
-        .update({'status': 'rejected'});
+    try {
+      await FirebaseFirestore.instance
+          .collection('connectionRequests')
+          .doc(req['id'])
+          .update({'status': 'rejected'});
 
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Request Rejected")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Request Rejected")));
+      }
+    } catch (e) {
+      debugPrint("Reject Error: $e");
     }
   }
 
@@ -234,6 +270,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
+
             // Welcome card
             Container(
               width: double.infinity,
@@ -250,6 +287,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                 children: [
                   CircleAvatar(
                     radius: 30,
+                    backgroundColor: Colors.white24,
                     backgroundImage: imageUrl.isNotEmpty
                         ? NetworkImage(imageUrl)
                         : null,
@@ -260,14 +298,13 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                             color: Colors.white,
                           )
                         : null,
-                    backgroundColor: Colors.white24,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "Welcome back,",
                           style: TextStyle(color: Colors.white70, fontSize: 13),
                         ),
@@ -431,6 +468,12 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final req = _requests[i];
+
+        // Safely read fields — studentName & studentEmail must be set
+        // when student creates the connectionRequest document
+        final studentName = req['studentName']?.toString() ?? 'Unknown Student';
+        final studentEmail = req['studentEmail']?.toString() ?? 'No email';
+
         return Container(
           decoration: BoxDecoration(
             color: const Color(0xFF0D1B2E),
@@ -445,25 +488,25 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             leading: CircleAvatar(
               backgroundColor: Colors.blueAccent.withOpacity(0.2),
               child: Text(
-                (req['studentName'] ?? 'S')[0].toUpperCase(),
+                studentName[0].toUpperCase(),
                 style: const TextStyle(color: Colors.blueAccent),
               ),
             ),
             title: Text(
-              req['studentName'] ?? '',
+              studentName,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
             subtitle: Text(
-              req['studentEmail'] ?? '',
+              studentEmail,
               style: const TextStyle(color: Colors.white54, fontSize: 12),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Accept
+                // Accept button
                 GestureDetector(
                   onTap: () => _acceptRequest(req),
                   child: Container(
@@ -480,7 +523,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Reject
+                // Reject button
                 GestureDetector(
                   onTap: () => _rejectRequest(req),
                   child: Container(
@@ -501,6 +544,9 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   }
 
   // ---- CONNECTIONS TAB ----
+  // Reads from _accepted which is populated by the connectionRequests listener.
+  // Each doc in connectionRequests (status=accepted) has:
+  //   studentName, studentEmail, studentId, alumniId
   Widget _buildConnectionsPage() {
     if (_accepted.isEmpty) {
       return const Center(
@@ -524,6 +570,11 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final con = _accepted[i];
+
+        // Safe field reads from the connectionRequests document
+        final studentName = con['studentName']?.toString() ?? 'Unknown Student';
+        final studentEmail = con['studentEmail']?.toString() ?? 'No email';
+
         return Container(
           decoration: BoxDecoration(
             color: const Color(0xFF0D1B2E),
@@ -538,25 +589,54 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             leading: CircleAvatar(
               backgroundColor: Colors.green.withOpacity(0.2),
               child: Text(
-                (con['studentName'] ?? 'S')[0].toUpperCase(),
+                studentName[0].toUpperCase(),
                 style: const TextStyle(color: Colors.green),
               ),
             ),
             title: Text(
-              con['studentName'] ?? '',
+              studentName,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            subtitle: Text(
-              con['studentEmail'] ?? '',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  studentEmail,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        "Connected",
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+            isThreeLine: true,
             trailing: const Icon(
               Icons.check_circle,
               color: Colors.green,
-              size: 20,
+              size: 22,
             ),
           ),
         );
@@ -573,13 +653,13 @@ class _AlumniHomePageState extends State<AlumniHomePage>
           const SizedBox(height: 20),
           CircleAvatar(
             radius: 55,
+            backgroundColor: Colors.blueAccent.withOpacity(0.2),
             backgroundImage: imageUrl.isNotEmpty
                 ? NetworkImage(imageUrl)
                 : null,
             child: imageUrl.isEmpty
                 ? const Icon(Icons.person, size: 55, color: Colors.white)
                 : null,
-            backgroundColor: Colors.blueAccent.withOpacity(0.2),
           ),
           const SizedBox(height: 16),
           Text(
@@ -590,10 +670,11 @@ class _AlumniHomePageState extends State<AlumniHomePage>
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
-            designation,
-            style: const TextStyle(color: Colors.white60, fontSize: 14),
-          ),
+          if (designation.isNotEmpty)
+            Text(
+              designation,
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
+            ),
           const SizedBox(height: 24),
           _infoTile(Icons.business, "Company", company),
           _infoTile(Icons.school, "Batch", batch),
@@ -655,7 +736,6 @@ class _AlumniHomePageState extends State<AlumniHomePage>
           ),
         ),
         actions: [
-          // Badge on requests icon in appbar when there are pending ones
           if (_currentTab != 1 && _requests.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(right: 16),
