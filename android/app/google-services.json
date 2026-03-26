@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "660750065239",
+    "project_id": "student-job-internship-finder",
+    "storage_bucket": "student-job-internship-finder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:660750065239:android:7b9ab649ff4f2dc4508d12",
+        "android_client_info": {
+          "package_name": "com.example.application"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzce7J6BsxJGoKwrMdSal9I7My89x0ipU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
