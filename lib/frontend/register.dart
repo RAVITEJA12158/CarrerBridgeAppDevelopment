@@ -106,8 +106,8 @@ class _registerPageState extends State<registerPage>
       _showSnack("Please enter your email");
       return;
     }
-    if (!RegExp(r'^[\w.+-]+@gmail\.com$').hasMatch(email)) {
-      _showSnack("Email must be a valid @gmail.com address");
+    if (!RegExp(r'^[\w.+-]+@student\.nitandhra\.ac\.in$').hasMatch(email)) {
+      _showSnack("Email must be a valid @student.nitandhra.ac.in address");
       return;
     }
 

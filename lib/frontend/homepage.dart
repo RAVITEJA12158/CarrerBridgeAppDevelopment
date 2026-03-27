@@ -18,6 +18,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   String email = "";
   String imageUrl = "";
   String role = "student";
+  String phone = "";
+  String branch = "";
+  String regNo = "";
+  String rollNo = "";
+  String year = "";
 
   late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
@@ -25,16 +30,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // ── Jobs from Firestore ───────────────────────────────────────────────────
   List<Map<String, dynamic>> _jobs = [];
   bool _jobsLoading = true;
-  Set<String> _savedJobIds = {}; // ← tracks saved job IDs locally
-  Set<String> _pendingAlumniIds = {}; // ← tracks sent connection requests
-  List<Map<String, dynamic>> _acceptedConnections =
-      []; // ← accepted alumni contacts
-  int _currentTab = 0; // ← 0=Home 1=Explore 2=Saved
+  Set<String> _savedJobIds = {};
+  Set<String> _pendingAlumniIds = {};
+  List<Map<String, dynamic>> _acceptedConnections = [];
+  int _currentTab = 0;
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   // ── Real-time stream subscriptions ───────────────────────────────────────
-  StreamSubscription? _studentDocSub; // listens to acceptedAlumni + savedJobs
-  StreamSubscription?
-  _pendingRequestsSub; // listens to connectionRequests status
+  StreamSubscription? _studentDocSub;
+  StreamSubscription? _pendingRequestsSub;
 
   // ── Alumni from Firestore ─────────────────────────────────────────────────
   List<Map<String, dynamic>> _alumni = [];
@@ -50,27 +57,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     Color(0xFF34D399),
   ];
 
-  // Job card accent colours (cycle)
   final List<Color> _jobColors = [
     Color(0xFF1E90FF),
     Color(0xFF00C9A7),
     Color(0xFFFFA940),
     Color(0xFFFF6B8A),
     Color(0xFFA78BFA),
-  ];
-
-  final List<Map<String, dynamic>> _quickActions = [
-    {'icon': Icons.search, 'label': 'Find Jobs', 'color': Color(0xFF1E90FF)},
-    {
-      'icon': Icons.bookmark_outline,
-      'label': 'Saved',
-      'color': Color(0xFF00C9A7),
-    },
-    {
-      'icon': Icons.send_outlined,
-      'label': 'Applied',
-      'color': Color(0xFFFFA940),
-    },
   ];
 
   @override
@@ -85,8 +77,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     loadUserProfile();
     _loadJobs();
     loadAlumni();
-    _loadSavedJobs(); // one-time load (student controls this)
-    _startRealTimeListeners(); // ← real-time for connections + requests
+    _loadSavedJobs();
+    _startRealTimeListeners();
   }
 
   @override
@@ -94,12 +86,34 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _fadeController.dispose();
     _studentDocSub?.cancel();
     _pendingRequestsSub?.cancel();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  // ── Filtered jobs based on search query ──────────────────────────────────
+  List<Map<String, dynamic>> get _filteredJobs {
+    if (_searchQuery.isEmpty) return _jobs;
+    final q = _searchQuery.toLowerCase();
+    return _jobs.where((j) {
+      return (j['title'] as String).toLowerCase().contains(q) ||
+          (j['company'] as String).toLowerCase().contains(q) ||
+          (j['location'] as String).toLowerCase().contains(q) ||
+          (j['type'] as String).toLowerCase().contains(q);
+    }).toList();
   }
 
   Future<void> loadUserProfile() async {
     try {
       await UserCache.instance.load();
+      final user = FirebaseAuth.instance.currentUser;
+      Map<String, dynamic> extra = {};
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('user')
+            .doc(user.uid)
+            .get();
+        if (doc.exists) extra = doc.data() ?? {};
+      }
       if (!mounted) return;
       setState(() {
         name = UserCache.instance.name.isNotEmpty
@@ -108,6 +122,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         email = UserCache.instance.email;
         imageUrl = UserCache.instance.imageUrl;
         role = UserCache.instance.role;
+        phone = extra['phone'] ?? '';
+        branch = extra['branch'] ?? '';
+        regNo = extra['regNo'] ?? '';
+        rollNo = extra['rollNo'] ?? '';
+        year = extra['year'] ?? '';
       });
     } catch (e) {
       debugPrint("Profile error: $e");
@@ -166,7 +185,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               accepted,
             ),
           );
-          debugPrint('🔄 Connections updated: ${_acceptedConnections.length}');
         }, onError: (e) => debugPrint('Student doc stream error: $e'));
 
     _pendingRequestsSub = FirebaseFirestore.instance
@@ -180,9 +198,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               .map((d) => d.data()['alumniId'] as String)
               .toSet();
           setState(() => _pendingAlumniIds = pending);
-          debugPrint(
-            '🔄 Pending requests updated: ${_pendingAlumniIds.length}',
-          );
         }, onError: (e) => debugPrint('Requests stream error: $e'));
   }
 
@@ -330,6 +345,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  // ── Navigate to Jobs page (from notification bell) ────────────────────────
+  void _openJobsPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _AllJobsPage(
+          jobs: _jobs,
+          savedJobIds: _savedJobIds,
+          onSave: _toggleSaveJob,
+          onTap: _showJobDetail,
+        ),
+      ),
+    );
+  }
+
   void _showProfileSheet() {
     showModalBottomSheet(
       context: context,
@@ -340,10 +370,391 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         email: email,
         imageUrl: imageUrl,
         role: role,
+        phone: phone,
+        branch: branch,
+        regNo: regNo,
+        rollNo: rollNo,
+        year: year,
         onLogout: () {
           Navigator.pop(context);
           logout();
         },
+        onEditProfile: () {
+          Navigator.pop(context);
+          _openEditProfile();
+        },
+        onSettings: () {
+          Navigator.pop(context);
+          _openSettings();
+        },
+        onAboutUs: () {
+          Navigator.pop(context);
+          _showAboutUsDialog();
+        },
+        onHelpSupport: () {
+          Navigator.pop(context);
+          _showHelpSupportDialog();
+        },
+      ),
+    );
+  }
+
+  void _openEditProfile() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _EditProfilePage(
+          uid: user.uid,
+          initialName: name,
+          initialPhone: phone,
+          initialBranch: branch,
+          initialRegNo: regNo,
+          initialRollNo: rollNo,
+          initialYear: year,
+          onSaved: (updated) {
+            setState(() {
+              name = updated['name'] ?? name;
+              phone = updated['phone'] ?? phone;
+              branch = updated['branch'] ?? branch;
+              regNo = updated['regNo'] ?? regNo;
+              rollNo = updated['rollNo'] ?? rollNo;
+              year = updated['year'] ?? year;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _SettingsPage(
+          name: name,
+          email: email,
+          role: role,
+          onLogout: logout,
+        ),
+      ),
+    );
+  }
+
+  void _showAboutUsDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: const Color(0xFF0D1B2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E90FF).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFF1E90FF).withOpacity(0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline,
+                        color: Color(0xFF1E90FF),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'About Us',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Alumni-Student Connect Platform',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E90FF),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'This project is a cross-platform mobile application built using Flutter, designed to streamline communication between alumni and current students of an institution.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'The system enables structured feedback collection, automated email notifications, and centralized data management using Firebase. The application includes authentication for users, an admin dashboard for managing feedback and user interactions, and a Firestore database to store and retrieve data in real time.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Alumni can submit feedback or responses through the app, while students and administrators can view, filter, and manage the submitted information. EmailJS integration is used to automate email communication between users, ensuring quick and reliable message delivery without requiring a dedicated backend server.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'The project focuses on improving engagement between alumni and students, simplifying feedback workflows, and providing a scalable digital communication platform for academic institutions.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _InfoChip(
+                  icon: Icons.flutter_dash,
+                  label: 'Built with Flutter',
+                ),
+                const SizedBox(height: 8),
+                _InfoChip(
+                  icon: Icons.cloud_outlined,
+                  label: 'Powered by Firebase',
+                ),
+                const SizedBox(height: 8),
+                _InfoChip(
+                  icon: Icons.email_outlined,
+                  label: 'EmailJS Integration',
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E90FF),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'Got it',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showHelpSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: const Color(0xFF0D1B2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C9A7).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF00C9A7).withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.help_outline,
+                      color: Color(0xFF00C9A7),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Help & Support',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Need help? Reach out to our developer directly.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.6),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFF00C9A7).withOpacity(0.25),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Developer',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.4),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Raviteja TSNV',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Email',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withOpacity(0.4),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(
+                          const ClipboardData(text: 'tsnvraviteja@gmail.com'),
+                        );
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('📋 Email copied to clipboard!'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          const Text(
+                            'tsnvraviteja@gmail.com',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF1E90FF),
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Color(0xFF1E90FF),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.copy,
+                            size: 14,
+                            color: Colors.white.withOpacity(0.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E90FF).withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF1E90FF).withOpacity(0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Color(0xFF1E90FF),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tap the email above to copy it to your clipboard.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.55),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C9A7),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -405,24 +816,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.07),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
+                          // ── Notification bell → opens Jobs page ───────
+                          GestureDetector(
+                            onTap: _openJobsPage,
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.07),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                ),
                               ),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.notifications_outlined,
-                                color: Colors.white,
-                                size: 20,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  if (_jobs.isNotEmpty)
+                                    Positioned(
+                                      right: 7,
+                                      top: 7,
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF1E90FF),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              onPressed: () {},
-                              padding: EdgeInsets.zero,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -490,41 +919,43 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 size: 20,
                               ),
                               const SizedBox(width: 10),
-                              Text(
-                                'Search jobs, internships...',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white.withOpacity(0.35),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // ── Quick Actions ──────────────────────────────
-                        const Text(
-                          'Quick Actions',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: _quickActions
-                              .map(
-                                (a) => Expanded(
-                                  child: _QuickActionTile(
-                                    icon: a['icon'],
-                                    label: a['label'],
-                                    color: a['color'],
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (v) =>
+                                      setState(() => _searchQuery = v.trim()),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search jobs, internships...',
+                                    hintStyle: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.white.withOpacity(0.35),
+                                    ),
+                                    border: InputBorder.none,
+                                    isDense: true,
                                   ),
                                 ),
-                              )
-                              .toList(),
+                              ),
+                              if (_searchQuery.isNotEmpty)
+                                GestureDetector(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 10),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: Colors.white.withOpacity(0.4),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 30),
@@ -533,9 +964,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Latest Jobs',
-                              style: TextStyle(
+                            Text(
+                              _searchQuery.isEmpty
+                                  ? 'Latest Jobs'
+                                  : 'Results (${_filteredJobs.length})',
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -573,7 +1006,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       )
-                    : _jobs.isEmpty
+                    : _filteredJobs.isEmpty
                     ? SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -584,13 +1017,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             child: Column(
                               children: [
                                 Icon(
-                                  Icons.work_off_outlined,
+                                  _searchQuery.isEmpty
+                                      ? Icons.work_off_outlined
+                                      : Icons.search_off,
                                   color: Colors.white.withOpacity(0.2),
                                   size: 42,
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'No jobs posted yet.\nCheck back soon!',
+                                  _searchQuery.isEmpty
+                                      ? 'No jobs posted yet.\nCheck back soon!'
+                                      : 'No jobs found for "$_searchQuery"',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.35),
@@ -608,166 +1045,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (_, i) => GestureDetector(
-                              onTap: () => _showJobDetail(_jobs[i]),
+                              onTap: () => _showJobDetail(_filteredJobs[i]),
                               child: _JobCard(
-                                job: _jobs[i],
-                                isSaved: _savedJobIds.contains(_jobs[i]['id']),
-                                onSave: () => _toggleSaveJob(_jobs[i]['id']),
+                                job: _filteredJobs[i],
+                                isSaved: _savedJobIds.contains(
+                                  _filteredJobs[i]['id'],
+                                ),
+                                onSave: () =>
+                                    _toggleSaveJob(_filteredJobs[i]['id']),
                               ),
                             ),
-                            childCount: _jobs.length,
+                            childCount: _filteredJobs.length,
                           ),
                         ),
                       ),
 
                 // ── Alumni Section Header ──────────────────────────────
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 14),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Alumni Network',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              _alumniLoading
-                                  ? 'Loading...'
-                                  : '${_alumni.length} alumni registered',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF7FA7C9),
-                              ),
-                            ),
-                          ],
-                        ),
-                        GestureDetector(
-                          onTap: loadAlumni,
-                          child: const Text(
-                            'Refresh',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF1E90FF),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── Alumni Cards ───────────────────────────────────────
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 168,
-                    child: _alumniLoading
-                        ? ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                            itemCount: 3,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 12),
-                            itemBuilder: (_, __) => _AlumniCardSkeleton(),
-                          )
-                        : _alumniError != null
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: Colors.white.withOpacity(0.3),
-                                  size: 32,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _alumniError!,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.4),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: loadAlumni,
-                                  child: const Text(
-                                    'Retry',
-                                    style: TextStyle(color: Color(0xFF1E90FF)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : _alumni.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.people_outline,
-                                  color: Colors.white.withOpacity(0.25),
-                                  size: 36,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'No alumni registered yet.',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.35),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                            itemCount: _alumni.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 12),
-                            itemBuilder: (_, i) => _AlumniCard(
-                              alumni: _alumni[i],
-                              isPending: _pendingAlumniIds.contains(
-                                _alumni[i]['uid'],
-                              ),
-                              onConnect: () => _sendConnectRequest(_alumni[i]),
-                            ),
-                          ),
-                  ),
-                ),
-
-                // ── My Connections ─────────────────────────────────────────
-                if (_acceptedConnections.isNotEmpty) ...[
+                if (_searchQuery.isEmpty) ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+                      padding: const EdgeInsets.fromLTRB(20, 30, 20, 14),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'My Connections',
+                                'Alumni Network',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
-                                '${_acceptedConnections.length} alumni connected',
+                                _alumniLoading
+                                    ? 'Loading...'
+                                    : '${_alumni.length} alumni registered',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFF7FA7C9),
@@ -776,7 +1093,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ],
                           ),
                           GestureDetector(
-                            onTap: () => setState(() {}),
+                            onTap: loadAlumni,
                             child: const Text(
                               'Refresh',
                               style: TextStyle(
@@ -790,20 +1107,147 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) => _ConnectionTile(
-                          connection: _acceptedConnections[i],
-                        ),
-                        childCount: _acceptedConnections.length,
-                      ),
+
+                  // ── Alumni Cards ─────────────────────────────────────
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 190,
+                      child: _alumniLoading
+                          ? ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              itemCount: 3,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (_, __) => _AlumniCardSkeleton(),
+                            )
+                          : _alumniError != null
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.white.withOpacity(0.3),
+                                    size: 32,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    _alumniError!,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.4),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: loadAlumni,
+                                    child: const Text(
+                                      'Retry',
+                                      style: TextStyle(
+                                        color: Color(0xFF1E90FF),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : _alumni.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.people_outline,
+                                    color: Colors.white.withOpacity(0.25),
+                                    size: 36,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'No alumni registered yet.',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.35),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                              itemCount: _alumni.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 12),
+                              itemBuilder: (_, i) => _AlumniCard(
+                                alumni: _alumni[i],
+                                isPending: _pendingAlumniIds.contains(
+                                  _alumni[i]['uid'],
+                                ),
+                                onConnect: () =>
+                                    _sendConnectRequest(_alumni[i]),
+                              ),
+                            ),
                     ),
                   ),
+
+                  // ── My Connections ───────────────────────────────────
+                  if (_acceptedConnections.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'My Connections',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${_acceptedConnections.length} alumni connected',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF7FA7C9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            GestureDetector(
+                              onTap: () => setState(() {}),
+                              child: const Text(
+                                'Refresh',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF1E90FF),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => _ConnectionTile(
+                            connection: _acceptedConnections[i],
+                          ),
+                          childCount: _acceptedConnections.length,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
 
-                // ── Bottom padding — accounts for nav bar + system inset ──
                 SliverToBoxAdapter(
                   child: Builder(
                     builder: (ctx) => SizedBox(
@@ -813,9 +1257,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ],
             ),
-          ), // end FadeTransition (Tab 0)
+          ), // end Tab 0
           // ── Tab 1: EXPLORE ────────────────────────────────────
-          _ExploreTab(),
+          _ExploreTab(
+            jobs: _jobs,
+            alumni: _alumni,
+            savedJobIds: _savedJobIds,
+            pendingAlumniIds: _pendingAlumniIds,
+            onSaveJob: _toggleSaveJob,
+            onJobTap: _showJobDetail,
+            onConnect: _sendConnectRequest,
+          ),
 
           // ── Tab 2: SAVED JOBS ─────────────────────────────────
           _SavedJobsTab(
@@ -825,10 +1277,122 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
         ],
       ),
-      // ── FIX: use SafeArea-aware bottom nav ────────────────────
       bottomNavigationBar: _BottomNav(
         currentIndex: _currentTab,
         onTabChanged: (i) => setState(() => _currentTab = i),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALL JOBS PAGE (opened from notification bell)
+// ─────────────────────────────────────────────────────────────────────────────
+class _AllJobsPage extends StatelessWidget {
+  final List<Map<String, dynamic>> jobs;
+  final Set<String> savedJobIds;
+  final void Function(String) onSave;
+  final void Function(Map<String, dynamic>) onTap;
+
+  const _AllJobsPage({
+    required this.jobs,
+    required this.savedJobIds,
+    required this.onSave,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF060D1F),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF060D1F),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 18,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'All Jobs',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: jobs.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.work_off_outlined,
+                    color: Colors.white.withOpacity(0.2),
+                    size: 48,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No jobs posted yet.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.35),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: jobs.length,
+              itemBuilder: (_, i) => GestureDetector(
+                onTap: () => onTap(jobs[i]),
+                child: _JobCard(
+                  job: jobs[i],
+                  isSaved: savedJobIds.contains(jobs[i]['id']),
+                  onSave: () => onSave(jobs[i]['id']),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INFO CHIP (used in About Us dialog)
+// ─────────────────────────────────────────────────────────────────────────────
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: const Color(0xFF1E90FF)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1046,7 +1610,7 @@ class _AlumniCard extends StatelessWidget {
         : 'Alumni';
 
     return Container(
-      width: 158,
+      width: 162,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
@@ -1223,14 +1787,30 @@ class _AlumniCardSkeleton extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _ProfileBottomSheet extends StatelessWidget {
   final String name, email, imageUrl, role;
+  final String phone, branch, regNo, rollNo, year;
   final VoidCallback onLogout;
+  final VoidCallback onEditProfile;
+  final VoidCallback onSettings;
+  final VoidCallback onAboutUs;
+  final VoidCallback onHelpSupport;
+
   const _ProfileBottomSheet({
     required this.name,
     required this.email,
     required this.imageUrl,
     required this.role,
+    required this.phone,
+    required this.branch,
+    required this.regNo,
+    required this.rollNo,
+    required this.year,
     required this.onLogout,
+    required this.onEditProfile,
+    required this.onSettings,
+    required this.onAboutUs,
+    required this.onHelpSupport,
   });
+
   @override
   Widget build(BuildContext context) => Container(
     decoration: const BoxDecoration(
@@ -1238,120 +1818,179 @@ class _ProfileBottomSheet extends StatelessWidget {
       borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
     ),
     padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-    child: Column(
+    child: SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF1E90FF), width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E90FF).withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 38,
+              backgroundColor: const Color(0xFF1E3A5F),
+              backgroundImage: imageUrl.isNotEmpty
+                  ? NetworkImage(imageUrl)
+                  : null,
+              child: imageUrl.isEmpty
+                  ? Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E90FF),
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            email,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E90FF).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF1E90FF).withOpacity(0.3),
+              ),
+            ),
+            child: Text(
+              role,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF1E90FF),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          // ── Mini info pills ──────────────────────────────────
+          if (branch.isNotEmpty || year.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              alignment: WrapAlignment.center,
+              children: [
+                if (branch.isNotEmpty)
+                  _InfoPill(icon: Icons.school_outlined, label: branch),
+                if (year.isNotEmpty)
+                  _InfoPill(icon: Icons.calendar_today_outlined, label: year),
+                if (rollNo.isNotEmpty)
+                  _InfoPill(icon: Icons.badge_outlined, label: 'Roll: $rollNo'),
+              ],
+            ),
+          ],
+          const SizedBox(height: 24),
+          Divider(color: Colors.white.withOpacity(0.1)),
+          const SizedBox(height: 8),
+          _MenuItem(
+            icon: Icons.person_outline,
+            label: 'Edit Profile',
+            onTap: onEditProfile,
+          ),
+          _MenuItem(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            onTap: onSettings,
+          ),
+          _MenuItem(
+            icon: Icons.info_outline,
+            label: 'About Us',
+            onTap: onAboutUs,
+          ),
+          _MenuItem(
+            icon: Icons.help_outline,
+            label: 'Help & Support',
+            onTap: onHelpSupport,
+          ),
+          const SizedBox(height: 8),
+          Divider(color: Colors.white.withOpacity(0.1)),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: onLogout,
+              icon: const Icon(Icons.logout, size: 18),
+              label: const Text(
+                'Logout',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.15),
+                foregroundColor: const Color(0xFFFF3B5C),
+                elevation: 0,
+                side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+// ── Small pill chip for profile sheet ────────────────────────────────────────
+class _InfoPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoPill({required this.icon, required this.label});
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.06),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: Colors.white.withOpacity(0.1)),
+    ),
+    child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 40,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFF1E90FF), width: 2.5),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1E90FF).withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: CircleAvatar(
-            radius: 38,
-            backgroundColor: const Color(0xFF1E3A5F),
-            backgroundImage: imageUrl.isNotEmpty
-                ? NetworkImage(imageUrl)
-                : null,
-            child: imageUrl.isEmpty
-                ? Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E90FF),
-                    ),
-                  )
-                : null,
-          ),
-        ),
-        const SizedBox(height: 14),
+        Icon(icon, size: 12, color: Colors.white.withOpacity(0.45)),
+        const SizedBox(width: 5),
         Text(
-          name,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          email,
-          style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E90FF).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF1E90FF).withOpacity(0.3)),
-          ),
-          child: Text(
-            role,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF1E90FF),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Divider(color: Colors.white.withOpacity(0.1)),
-        const SizedBox(height: 8),
-        _MenuItem(
-          icon: Icons.person_outline,
-          label: 'Edit Profile',
-          onTap: () {},
-        ),
-        _MenuItem(
-          icon: Icons.settings_outlined,
-          label: 'Settings',
-          onTap: () {},
-        ),
-        _MenuItem(icon: Icons.info_outline, label: 'About Us', onTap: () {}),
-        _MenuItem(
-          icon: Icons.help_outline,
-          label: 'Help & Support',
-          onTap: () {},
-        ),
-        const SizedBox(height: 8),
-        Divider(color: Colors.white.withOpacity(0.1)),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton.icon(
-            onPressed: onLogout,
-            icon: const Icon(Icons.logout, size: 18),
-            label: const Text(
-              'Logout',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.15),
-              foregroundColor: const Color(0xFFFF3B5C),
-              elevation: 0,
-              side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.white.withOpacity(0.65),
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -1398,44 +2037,845 @@ class _MenuItem extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SUPPORTING WIDGETS
+// EDIT PROFILE PAGE
 // ─────────────────────────────────────────────────────────────────────────────
-class _QuickActionTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _QuickActionTile({
-    required this.icon,
-    required this.label,
-    required this.color,
+class _EditProfilePage extends StatefulWidget {
+  final String uid;
+  final String initialName, initialPhone, initialBranch;
+  final String initialRegNo, initialRollNo, initialYear;
+  final void Function(Map<String, String>) onSaved;
+
+  const _EditProfilePage({
+    required this.uid,
+    required this.initialName,
+    required this.initialPhone,
+    required this.initialBranch,
+    required this.initialRegNo,
+    required this.initialRollNo,
+    required this.initialYear,
+    required this.onSaved,
   });
+
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withOpacity(0.25)),
+  State<_EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<_EditProfilePage> {
+  late TextEditingController _nameCtr;
+  late TextEditingController _phoneCtr;
+  late TextEditingController _branchCtr;
+  late TextEditingController _regNoCtr;
+  late TextEditingController _rollNoCtr;
+  late TextEditingController _yearCtr;
+
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtr = TextEditingController(text: widget.initialName);
+    _phoneCtr = TextEditingController(text: widget.initialPhone);
+    _branchCtr = TextEditingController(text: widget.initialBranch);
+    _regNoCtr = TextEditingController(text: widget.initialRegNo);
+    _rollNoCtr = TextEditingController(text: widget.initialRollNo);
+    _yearCtr = TextEditingController(text: widget.initialYear);
+  }
+
+  @override
+  void dispose() {
+    _nameCtr.dispose();
+    _phoneCtr.dispose();
+    _branchCtr.dispose();
+    _regNoCtr.dispose();
+    _rollNoCtr.dispose();
+    _yearCtr.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtr.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Name cannot be empty')));
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final data = {
+        'name': name,
+        'phone': _phoneCtr.text.trim(),
+        'branch': _branchCtr.text.trim(),
+        'regNo': _regNoCtr.text.trim(),
+        'rollNo': _rollNoCtr.text.trim(),
+        'year': _yearCtr.text.trim(),
+      };
+      await FirebaseFirestore.instance
+          .collection('user')
+          .doc(widget.uid)
+          .update(data);
+      widget.onSaved(data);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Profile updated successfully!'),
+          backgroundColor: Color(0xFF00C9A7),
         ),
-        child: Icon(icon, color: color, size: 26),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF060D1F),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF060D1F),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 18,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF1E90FF),
+                    ),
+                  )
+                : GestureDetector(
+                    onTap: _save,
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E90FF),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
-      const SizedBox(height: 8),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Avatar placeholder ─────────────────────────────────
+            Center(
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF1E90FF),
+                        width: 2.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1E90FF).withOpacity(0.25),
+                          blurRadius: 20,
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 44,
+                      backgroundColor: const Color(0xFF1E3A5F),
+                      child: Text(
+                        _nameCtr.text.isNotEmpty
+                            ? _nameCtr.text[0].toUpperCase()
+                            : 'U',
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E90FF),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E90FF),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF060D1F),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // ── Section: Personal Info ─────────────────────────────
+            _SectionLabel(label: 'Personal Information'),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _nameCtr,
+              label: 'Full Name',
+              icon: Icons.person_outline,
+              hint: 'Enter your full name',
+            ),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _phoneCtr,
+              label: 'Phone Number',
+              icon: Icons.phone_outlined,
+              hint: 'Enter your phone number',
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 24),
+
+            // ── Section: Academic Info ─────────────────────────────
+            _SectionLabel(label: 'Academic Information'),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _branchCtr,
+              label: 'Branch',
+              icon: Icons.school_outlined,
+              hint: 'e.g. CSE, ECE, MECH',
+            ),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _yearCtr,
+              label: 'Year / Batch',
+              icon: Icons.calendar_today_outlined,
+              hint: 'e.g. 2024-2028',
+            ),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _regNoCtr,
+              label: 'Registration Number',
+              icon: Icons.numbers_outlined,
+              hint: 'Enter your reg. number',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 12),
+            _ProfileField(
+              controller: _rollNoCtr,
+              label: 'Roll Number',
+              icon: Icons.badge_outlined,
+              hint: 'Enter your roll number',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 32),
+
+            // ── Save Button ────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E90FF),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  disabledBackgroundColor: const Color(
+                    0xFF1E90FF,
+                  ).withOpacity(0.4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Section label helper ──────────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
       Text(
         label,
-        textAlign: TextAlign.center,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.white.withOpacity(0.65),
-          fontWeight: FontWeight.w500,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF1E90FF),
+          letterSpacing: 0.5,
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Container(
+          height: 1,
+          color: const Color(0xFF1E90FF).withOpacity(0.2),
         ),
       ),
     ],
+  );
+}
+
+// ── Profile text field ────────────────────────────────────────────────────────
+class _ProfileField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label, hint;
+  final IconData icon;
+  final TextInputType keyboardType;
+
+  const _ProfileField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    required this.hint,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withOpacity(0.5),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(fontSize: 14, color: Colors.white),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.25),
+              ),
+              prefixIcon: Icon(
+                icon,
+                size: 18,
+                color: Colors.white.withOpacity(0.4),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 14,
+                horizontal: 4,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETTINGS PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+class _SettingsPage extends StatefulWidget {
+  final String name, email, role;
+  final VoidCallback onLogout;
+
+  const _SettingsPage({
+    required this.name,
+    required this.email,
+    required this.role,
+    required this.onLogout,
+  });
+
+  @override
+  State<_SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<_SettingsPage> {
+  bool _notificationsEnabled = true;
+  bool _jobAlerts = true;
+  bool _connectionAlerts = true;
+  bool _emailNotifications = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF060D1F),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF060D1F),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 18,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Settings',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Account Info Card ──────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: const Color(0xFF1E90FF).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF1E90FF).withOpacity(0.15),
+                      border: Border.all(
+                        color: const Color(0xFF1E90FF).withOpacity(0.4),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        widget.name.isNotEmpty
+                            ? widget.name[0].toUpperCase()
+                            : 'U',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E90FF),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          widget.email,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withOpacity(0.45),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E90FF).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            widget.role,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF1E90FF),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // ── Notifications ──────────────────────────────────────
+            _SectionLabel(label: 'Notifications'),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              children: [
+                _ToggleTile(
+                  icon: Icons.notifications_outlined,
+                  iconColor: const Color(0xFF1E90FF),
+                  title: 'Push Notifications',
+                  subtitle: 'Receive in-app notifications',
+                  value: _notificationsEnabled,
+                  onChanged: (v) => setState(() => _notificationsEnabled = v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.work_outline,
+                  iconColor: const Color(0xFF00C9A7),
+                  title: 'Job Alerts',
+                  subtitle: 'New job postings in your feed',
+                  value: _jobAlerts,
+                  onChanged: (v) => setState(() => _jobAlerts = v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.people_outline,
+                  iconColor: const Color(0xFFFFA940),
+                  title: 'Connection Alerts',
+                  subtitle: 'Alumni accepted your request',
+                  value: _connectionAlerts,
+                  onChanged: (v) => setState(() => _connectionAlerts = v),
+                ),
+                _Divider(),
+                _ToggleTile(
+                  icon: Icons.email_outlined,
+                  iconColor: const Color(0xFFA78BFA),
+                  title: 'Email Notifications',
+                  subtitle: 'Receive updates via email',
+                  value: _emailNotifications,
+                  onChanged: (v) => setState(() => _emailNotifications = v),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Account ────────────────────────────────────────────
+            _SectionLabel(label: 'Account'),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              children: [
+                _TapTile(
+                  icon: Icons.lock_outline,
+                  iconColor: const Color(0xFF1E90FF),
+                  title: 'Change Password',
+                  subtitle: 'Update your account password',
+                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Password change coming soon'),
+                    ),
+                  ),
+                ),
+                _Divider(),
+                _TapTile(
+                  icon: Icons.privacy_tip_outlined,
+                  iconColor: const Color(0xFF00C9A7),
+                  title: 'Privacy Policy',
+                  subtitle: 'Read our privacy policy',
+                  onTap: () {},
+                ),
+                _Divider(),
+                _TapTile(
+                  icon: Icons.description_outlined,
+                  iconColor: const Color(0xFFFFA940),
+                  title: 'Terms of Service',
+                  subtitle: 'Read our terms of service',
+                  onTap: () {},
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── App Info ───────────────────────────────────────────
+            _SectionLabel(label: 'App'),
+            const SizedBox(height: 12),
+            _SettingsCard(
+              children: [
+                _TapTile(
+                  icon: Icons.info_outline,
+                  iconColor: const Color(0xFFA78BFA),
+                  title: 'App Version',
+                  subtitle: 'v1.0.0',
+                  onTap: null,
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C9A7).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'Latest',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF00C9A7),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Danger Zone ────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onLogout();
+                },
+                icon: const Icon(Icons.logout, size: 18),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.12),
+                  foregroundColor: const Color(0xFFFF3B5C),
+                  elevation: 0,
+                  side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Settings helpers ──────────────────────────────────────────────────────────
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+  const _SettingsCard({required this.children});
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: Colors.white.withOpacity(0.09)),
+    ),
+    child: Column(children: children),
+  );
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Divider(
+    height: 1,
+    thickness: 1,
+    indent: 56,
+    endIndent: 16,
+    color: Colors.white.withOpacity(0.07),
+  );
+}
+
+class _ToggleTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title, subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ToggleTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    child: Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: iconColor, size: 18),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: const Color(0xFF1E90FF),
+          activeTrackColor: const Color(0xFF1E90FF).withOpacity(0.3),
+          inactiveThumbColor: Colors.white.withOpacity(0.4),
+          inactiveTrackColor: Colors.white.withOpacity(0.1),
+        ),
+      ],
+    ),
+  );
+}
+
+class _TapTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title, subtitle;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  const _TapTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(18),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          trailing ??
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Colors.white.withOpacity(0.25),
+              ),
+        ],
+      ),
+    ),
   );
 }
 
@@ -1586,22 +3026,435 @@ class _ConnectionTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// EXPLORE TAB
+// EXPLORE TAB — full search for jobs + alumni
 // ─────────────────────────────────────────────────────────────────────────────
-class _ExploreTab extends StatelessWidget {
+class _ExploreTab extends StatefulWidget {
+  final List<Map<String, dynamic>> jobs;
+  final List<Map<String, dynamic>> alumni;
+  final Set<String> savedJobIds;
+  final Set<String> pendingAlumniIds;
+  final void Function(String) onSaveJob;
+  final void Function(Map<String, dynamic>) onJobTap;
+  final void Function(Map<String, dynamic>) onConnect;
+
+  const _ExploreTab({
+    required this.jobs,
+    required this.alumni,
+    required this.savedJobIds,
+    required this.pendingAlumniIds,
+    required this.onSaveJob,
+    required this.onJobTap,
+    required this.onConnect,
+  });
+
+  @override
+  State<_ExploreTab> createState() => _ExploreTabState();
+}
+
+class _ExploreTabState extends State<_ExploreTab> {
+  final TextEditingController _ctrl = TextEditingController();
+  String _query = '';
+  // 0=All, 1=Jobs, 2=Alumni
+  int _filter = 0;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _filteredJobs {
+    if (_query.isEmpty) return widget.jobs;
+    final q = _query.toLowerCase();
+    return widget.jobs.where((j) {
+      return (j['title'] as String).toLowerCase().contains(q) ||
+          (j['company'] as String).toLowerCase().contains(q) ||
+          (j['location'] as String).toLowerCase().contains(q) ||
+          (j['type'] as String).toLowerCase().contains(q);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredAlumni {
+    if (_query.isEmpty) return widget.alumni;
+    final q = _query.toLowerCase();
+    return widget.alumni.where((a) {
+      return (a['name'] as String).toLowerCase().contains(q) ||
+          (a['company'] as String).toLowerCase().contains(q) ||
+          (a['designation'] as String).toLowerCase().contains(q) ||
+          (a['batch'] as String).toLowerCase().contains(q);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final showJobs = _filter == 0 || _filter == 1;
+    final showAlumni = _filter == 0 || _filter == 2;
+
+    return SafeArea(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.search, size: 48, color: Colors.white.withOpacity(0.15)),
-          const SizedBox(height: 12),
-          Text(
-            'Explore coming soon',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.white.withOpacity(0.3),
+          // ── Header ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Explore',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Search jobs and alumni',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.4),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // ── Search Bar ────────────────────────────────────
+                Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withOpacity(0.12)),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 14),
+                      Icon(
+                        Icons.search,
+                        color: Colors.white.withOpacity(0.35),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _ctrl,
+                          autofocus: false,
+                          onChanged: (v) => setState(() => _query = v.trim()),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search jobs, companies, alumni...',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withOpacity(0.3),
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      if (_query.isNotEmpty)
+                        GestureDetector(
+                          onTap: () {
+                            _ctrl.clear();
+                            setState(() => _query = '');
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.white.withOpacity(0.4),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // ── Filter Chips ─────────────────────────────────
+                Row(
+                  children: [
+                    _FilterChip(
+                      label: 'All',
+                      active: _filter == 0,
+                      onTap: () => setState(() => _filter = 0),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Jobs',
+                      active: _filter == 1,
+                      onTap: () => setState(() => _filter = 1),
+                    ),
+                    const SizedBox(width: 8),
+                    _FilterChip(
+                      label: 'Alumni',
+                      active: _filter == 2,
+                      onTap: () => setState(() => _filter = 2),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── Results ───────────────────────────────────────────────
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              children: [
+                if (showJobs) ...[
+                  if (_filter == 0)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(
+                        'Jobs (${_filteredJobs.length})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  if (_filteredJobs.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          _query.isEmpty
+                              ? 'No jobs available'
+                              : 'No jobs found for "$_query"',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._filteredJobs.map(
+                      (job) => GestureDetector(
+                        onTap: () => widget.onJobTap(job),
+                        child: _JobCard(
+                          job: job,
+                          isSaved: widget.savedJobIds.contains(job['id']),
+                          onSave: () => widget.onSaveJob(job['id']),
+                        ),
+                      ),
+                    ),
+                ],
+                if (showAlumni) ...[
+                  if (_filter == 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 10),
+                      child: Text(
+                        'Alumni (${_filteredAlumni.length})',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  if (_filteredAlumni.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Text(
+                          _query.isEmpty
+                              ? 'No alumni available'
+                              : 'No alumni found for "$_query"',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    ..._filteredAlumni.map(
+                      (a) => _AlumniListTile(
+                        alumni: a,
+                        isPending: widget.pendingAlumniIds.contains(a['uid']),
+                        onConnect: () => widget.onConnect(a),
+                      ),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Filter Chip ───────────────────────────────────────────────────────────────
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  const _FilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: active
+              ? const Color(0xFF1E90FF)
+              : Colors.white.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active
+                ? const Color(0xFF1E90FF)
+                : Colors.white.withOpacity(0.12),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : Colors.white.withOpacity(0.5),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Alumni List Tile (for Explore tab) ────────────────────────────────────────
+class _AlumniListTile extends StatelessWidget {
+  final Map<String, dynamic> alumni;
+  final bool isPending;
+  final VoidCallback onConnect;
+  const _AlumniListTile({
+    required this.alumni,
+    required this.isPending,
+    required this.onConnect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color c = alumni['color'] as Color;
+    final String company = alumni['company'] ?? '';
+    final String designation = alumni['designation'] ?? '';
+    final String batch = alumni['batch'] ?? '';
+    final String subtitle = (designation.isNotEmpty && company.isNotEmpty)
+        ? '$designation @ $company'
+        : designation.isNotEmpty
+        ? designation
+        : company.isNotEmpty
+        ? company
+        : 'Alumni';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.09)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: c.withOpacity(0.15),
+              border: Border.all(color: c.withOpacity(0.4), width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                alumni['initials'],
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: c,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  alumni['name'],
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                ),
+                if (batch.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: c.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      batch,
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: c,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: isPending ? null : onConnect,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: isPending
+                    ? Colors.white.withOpacity(0.06)
+                    : c.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isPending
+                      ? Colors.white.withOpacity(0.12)
+                      : c.withOpacity(0.4),
+                ),
+              ),
+              child: Text(
+                isPending ? 'Pending' : 'Connect',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isPending ? Colors.white.withOpacity(0.35) : c,
+                ),
+              ),
             ),
           ),
         ],
@@ -1825,14 +3678,10 @@ class _SavedJobCard extends StatelessWidget {
               job['applyLink'].toString().isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
-              children: [
-                const Icon(
-                  Icons.open_in_new,
-                  size: 12,
-                  color: Color(0xFF1E90FF),
-                ),
-                const SizedBox(width: 4),
-                const Text(
+              children: const [
+                Icon(Icons.open_in_new, size: 12, color: Color(0xFF1E90FF)),
+                SizedBox(width: 4),
+                Text(
                   'Apply Now',
                   style: TextStyle(
                     fontSize: 11,
@@ -1850,7 +3699,7 @@ class _SavedJobCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BOTTOM NAV — FIX: wraps content in SafeArea to handle system bottom inset
+// BOTTOM NAV
 // ─────────────────────────────────────────────────────────────────────────────
 class _BottomNav extends StatelessWidget {
   final int currentIndex;
@@ -1869,12 +3718,10 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ── KEY FIX: use SafeArea so the nav bar grows to cover the
-    //            home indicator / system gesture area automatically ──
     return SafeArea(
-      top: false, // only pad the bottom
+      top: false,
       child: Container(
-        height: 60, // fixed content height — SafeArea adds the inset on top
+        height: 60,
         decoration: BoxDecoration(
           color: const Color(0xFF0D1B2E),
           border: Border(
