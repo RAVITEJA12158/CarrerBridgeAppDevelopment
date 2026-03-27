@@ -85,12 +85,8 @@ class _registerPageState extends State<registerPage>
   }
 
   Future<void> register() async {
-    // ── Secret admin access code — change this to your own secret ────────
     const String adminSecretCode = 'ADMIN@2025';
 
-    // ── Validation ────────────────────────────────────────────────────────
-
-    // Full name
     if (nameController.text.trim().isEmpty) {
       _showSnack("Please enter your full name");
       return;
@@ -100,7 +96,6 @@ class _registerPageState extends State<registerPage>
       return;
     }
 
-    // Email
     final String email = emailController.text.trim();
     if (email.isEmpty) {
       _showSnack("Please enter your email");
@@ -111,7 +106,6 @@ class _registerPageState extends State<registerPage>
       return;
     }
 
-    // Phone
     final String phone = phoneController.text.trim();
     if (phone.isEmpty) {
       _showSnack("Please enter your phone number");
@@ -155,7 +149,6 @@ class _registerPageState extends State<registerPage>
       return;
     }
 
-    // ── Student field validation ───────────────────────────────────────────
     if (selectedRole == 'student') {
       if (rollController.text.trim().isEmpty) {
         _showSnack("Please enter your Roll Number");
@@ -179,7 +172,6 @@ class _registerPageState extends State<registerPage>
       }
     }
 
-    // ── Alumni field validation ────────────────────────────────────────────
     if (selectedRole == 'alumni') {
       if (batchController.text.trim().isEmpty) {
         _showSnack("Please enter your Batch / Passing Year");
