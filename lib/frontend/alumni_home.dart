@@ -28,16 +28,11 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   late Animation<double> _fadeAnim;
 
   // ================= REQUESTS =================
-  // Pending connection requests where this alumni is the target
   List<Map<String, dynamic>> _requests = [];
   bool _requestsLoading = true;
   StreamSubscription? _requestsSub;
 
   // ================= ACCEPTED =================
-  // Accepted connections — we read from 'user' collection's acceptedAlumni array
-  // but we also listen to connectionRequests for the accepted list.
-  // Since student's `acceptedAlumni` stores alumniEmail/alumniId/alumniName,
-  // we query connectionRequests with status=accepted to get student details.
   List<Map<String, dynamic>> _accepted = [];
   StreamSubscription? _acceptedSub;
 
@@ -68,13 +63,25 @@ class _AlumniHomePageState extends State<AlumniHomePage>
     super.dispose();
   }
 
+  // ================= SAFE HELPERS =================
+  // Handles null, empty string, whitespace — prevents RangeError
+  String _safeName(dynamic value, String fallback) {
+    final s = (value?.toString() ?? '').trim();
+    return s.isNotEmpty ? s : fallback;
+  }
+
+  // Returns first character safely — NEVER crashes on empty string
+  String _initial(String name) {
+    final s = name.trim();
+    return s.isNotEmpty ? s[0].toUpperCase() : '?';
+  }
+
   // ================= PROFILE =================
   Future<void> _loadProfile() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // Collection is 'alumini' (matching your Firestore)
       final doc = await FirebaseFirestore.instance
           .collection('alumini')
           .doc(user.uid)
@@ -83,13 +90,13 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       if (doc.exists && mounted) {
         final data = doc.data()!;
         setState(() {
-          name = data['name'] ?? 'Alumni';
-          email = data['email'] ?? user.email ?? '';
-          imageUrl = data['imageUrl'] ?? '';
-          company = data['company'] ?? '';
-          designation = data['designation'] ?? '';
-          batch = data['batch'] ?? '';
-          phone = data['phone'] ?? '';
+          name = _safeName(data['name'], 'Alumni');
+          email = _safeName(data['email'], user.email ?? '');
+          imageUrl = (data['imageUrl'] ?? '').toString().trim();
+          company = _safeName(data['company'], '');
+          designation = _safeName(data['designation'], '');
+          batch = _safeName(data['batch'], '');
+          phone = _safeName(data['phone'], '');
         });
       }
     } catch (e) {
@@ -146,8 +153,6 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   }
 
   // ================= ACCEPTED LISTENER =================
-  // Listens to connectionRequests where status='accepted' for this alumni.
-  // This gives us studentName + studentEmail directly from the request doc.
   void _startAcceptedListener() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -178,8 +183,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
           .doc(req['id'])
           .update({'status': 'accepted'});
 
-      // 2. Add this alumni's details to the student's acceptedAlumni array
-      //    Student is in 'user' collection (your Firestore structure)
+      // 2. Add alumni details into student's acceptedAlumni array
       await FirebaseFirestore.instance
           .collection('user')
           .doc(req['studentId'])
@@ -188,12 +192,12 @@ class _AlumniHomePageState extends State<AlumniHomePage>
               {
                 'alumniId': currentUser.uid,
                 'alumniName': name,
-                'alumniEmail': email, // uses email from alumni's 'alumini' doc
+                'alumniEmail': email,
               },
             ]),
           });
 
-      // 3. Save student email to this alumni's connectedStudents array in 'alumini' collection
+      // 3. Save student email into alumni's connectedStudents array
       await FirebaseFirestore.instance
           .collection('alumini')
           .doc(currentUser.uid)
@@ -203,10 +207,10 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             ]),
           });
 
-      // 4. Send email notification to the student
-      if (req['studentEmail'] != null &&
-          (req['studentEmail'] as String).isNotEmpty) {
-        await sendEmail(req['studentEmail']);
+      // 4. Send email notification to student
+      final studentEmail = (req['studentEmail'] ?? '').toString().trim();
+      if (studentEmail.isNotEmpty) {
+        await sendEmail(studentEmail);
       }
 
       if (mounted) {
@@ -354,7 +358,6 @@ class _AlumniHomePageState extends State<AlumniHomePage>
 
             const SizedBox(height: 24),
 
-            // Quick info
             const Text(
               "Your Details",
               style: TextStyle(
@@ -422,18 +425,21 @@ class _AlumniHomePageState extends State<AlumniHomePage>
         children: [
           Icon(icon, color: Colors.blueAccent, size: 20),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
-              ),
-              Text(
-                value.isEmpty ? '—' : value,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                ),
+                Text(
+                  value.isEmpty ? '—' : value,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -469,10 +475,9 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       itemBuilder: (context, i) {
         final req = _requests[i];
 
-        // Safely read fields — studentName & studentEmail must be set
-        // when student creates the connectionRequest document
-        final studentName = req['studentName']?.toString() ?? 'Unknown Student';
-        final studentEmail = req['studentEmail']?.toString() ?? 'No email';
+        // ✅ _safeName handles null + empty + whitespace
+        final studentName = _safeName(req['studentName'], 'Unknown Student');
+        final studentEmail = _safeName(req['studentEmail'], 'No email');
 
         return Container(
           decoration: BoxDecoration(
@@ -487,8 +492,9 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             ),
             leading: CircleAvatar(
               backgroundColor: Colors.blueAccent.withOpacity(0.2),
+              // ✅ _initial() never crashes — returns '?' for empty
               child: Text(
-                studentName[0].toUpperCase(),
+                _initial(studentName),
                 style: const TextStyle(color: Colors.blueAccent),
               ),
             ),
@@ -506,7 +512,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Accept button
+                // Accept
                 GestureDetector(
                   onTap: () => _acceptRequest(req),
                   child: Container(
@@ -523,7 +529,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Reject button
+                // Reject
                 GestureDetector(
                   onTap: () => _rejectRequest(req),
                   child: Container(
@@ -544,9 +550,6 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   }
 
   // ---- CONNECTIONS TAB ----
-  // Reads from _accepted which is populated by the connectionRequests listener.
-  // Each doc in connectionRequests (status=accepted) has:
-  //   studentName, studentEmail, studentId, alumniId
   Widget _buildConnectionsPage() {
     if (_accepted.isEmpty) {
       return const Center(
@@ -571,9 +574,9 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       itemBuilder: (context, i) {
         final con = _accepted[i];
 
-        // Safe field reads from the connectionRequests document
-        final studentName = con['studentName']?.toString() ?? 'Unknown Student';
-        final studentEmail = con['studentEmail']?.toString() ?? 'No email';
+        // ✅ _safeName handles null + empty + whitespace
+        final studentName = _safeName(con['studentName'], 'Unknown Student');
+        final studentEmail = _safeName(con['studentEmail'], 'No email');
 
         return Container(
           decoration: BoxDecoration(
@@ -588,8 +591,9 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             ),
             leading: CircleAvatar(
               backgroundColor: Colors.green.withOpacity(0.2),
+              // ✅ _initial() never crashes — returns '?' for empty
               child: Text(
-                studentName[0].toUpperCase(),
+                _initial(studentName),
                 style: const TextStyle(color: Colors.green),
               ),
             ),
@@ -608,27 +612,23 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
                 const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        "Connected",
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    "Connected",
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
