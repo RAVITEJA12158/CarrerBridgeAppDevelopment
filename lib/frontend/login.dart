@@ -391,8 +391,8 @@ class _loginPageState extends State<loginPage>
       return;
     }
 
-    // ── Admin access code pre-check ─────────────────────────────────────
-    const String adminSecretCode = 'ADMIN@2025'; // must match register.dart
+    
+    const String adminSecretCode = 'ADMIN@2025'; 
     if (roles[selectedRole] == 'admin') {
       if (adminCodeController.text.trim().isEmpty) {
         _showSnack("Please enter the Admin Access Code.");

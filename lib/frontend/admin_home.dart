@@ -11,7 +11,6 @@ class AdminHomePage extends StatefulWidget {
 
 class _AdminHomePageState extends State<AdminHomePage>
     with TickerProviderStateMixin {
-  // ── Admin profile ─────────────────────────────────────────────────────────
   String name = "Loading...";
   String email = "";
   String department = "";
@@ -21,22 +20,18 @@ class _AdminHomePageState extends State<AdminHomePage>
   late Animation<double> _fadeAnim;
   late TabController _tabController;
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
   int _totalStudents = 0;
   int _totalAlumni = 0;
   int _totalAdmins = 0;
   bool _statsLoading = true;
 
-  // ── Users ─────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _allUsers = [];
   bool _usersLoading = true;
   String _filterRole = 'All';
 
-  // ── Jobs ──────────────────────────────────────────────────────────────────
   List<Map<String, dynamic>> _jobs = [];
   bool _jobsLoading = true;
 
-  // ── Post Job form controllers ─────────────────────────────────────────────
   final _jobTitleCtrl = TextEditingController();
   final _jobCompanyCtrl = TextEditingController();
   final _jobLocationCtrl = TextEditingController();
@@ -46,12 +41,12 @@ class _AdminHomePageState extends State<AdminHomePage>
   String _jobTypeSelected = 'Internship';
 
   final List<Color> _colors = [
-    Color(0xFFFF6B35),
-    Color(0xFFFFA940),
-    Color(0xFF1E90FF),
-    Color(0xFF00C9A7),
-    Color(0xFFA78BFA),
-    Color(0xFFFF6B8A),
+    const Color(0xFFFF6B35),
+    const Color(0xFFFFA940),
+    const Color(0xFF1E90FF),
+    const Color(0xFF00C9A7),
+    const Color(0xFFA78BFA),
+    const Color(0xFFFF6B8A),
   ];
 
   @override
@@ -113,13 +108,14 @@ class _AdminHomePageState extends State<AdminHomePage>
         FirebaseFirestore.instance.collection('alumini').get(),
         FirebaseFirestore.instance.collection('admin').get(),
       ]);
-      if (mounted)
+      if (mounted) {
         setState(() {
           _totalStudents = results[0].docs.length;
           _totalAlumni = results[1].docs.length;
           _totalAdmins = results[2].docs.length;
           _statsLoading = false;
         });
+      }
     } catch (e) {
       debugPrint('Stats error: $e');
       if (mounted) setState(() => _statsLoading = false);
@@ -168,11 +164,12 @@ class _AdminHomePageState extends State<AdminHomePage>
           'color': _colors[i % _colors.length],
         });
       }
-      if (mounted)
+      if (mounted) {
         setState(() {
           _allUsers = list;
           _usersLoading = false;
         });
+      }
     } catch (e) {
       debugPrint('Users error: $e');
       if (mounted) setState(() => _usersLoading = false);
@@ -187,11 +184,12 @@ class _AdminHomePageState extends State<AdminHomePage>
           .orderBy('createdAt', descending: true)
           .get();
       final list = snap.docs.map((d) => {'id': d.id, ...d.data()}).toList();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _jobs = list;
           _jobsLoading = false;
         });
+      }
     } catch (e) {
       debugPrint('Jobs error: $e');
       if (mounted) setState(() => _jobsLoading = false);
@@ -199,6 +197,7 @@ class _AdminHomePageState extends State<AdminHomePage>
   }
 
   // ── Delete user ───────────────────────────────────────────────────────────
+
   Future<void> _deleteUser(String uid, String userName) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -235,9 +234,7 @@ class _AdminHomePageState extends State<AdminHomePage>
         ],
       ),
     );
-
     if (confirm != true) return;
-
     try {
       final roleVal =
           _allUsers.firstWhere(
@@ -245,24 +242,22 @@ class _AdminHomePageState extends State<AdminHomePage>
             orElse: () => {},
           )['role'] ??
           'student';
-      final delCollection = roleVal == 'alumni'
+      final col = roleVal == 'alumni'
           ? 'alumini'
           : roleVal == 'admin'
           ? 'admin'
           : 'user';
-      await FirebaseFirestore.instance
-          .collection(delCollection)
-          .doc(uid)
-          .delete();
-      _showSnack('User "$userName" deleted successfully.');
+      await FirebaseFirestore.instance.collection(col).doc(uid).delete();
+      _showSnack('User "$userName" deleted.');
       _loadStats();
       _loadAllUsers();
     } catch (e) {
-      _showSnack('Failed to delete user: $e');
+      _showSnack('Failed: $e');
     }
   }
 
   // ── Delete job ────────────────────────────────────────────────────────────
+
   Future<void> _deleteJob(String jobId, String jobTitle) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -309,7 +304,8 @@ class _AdminHomePageState extends State<AdminHomePage>
     }
   }
 
-  // ── Post job ──────────────────────────────────────────────────────────────
+  // ── Post job sheet ────────────────────────────────────────────────────────
+
   void _showPostJobSheet() {
     _jobTitleCtrl.clear();
     _jobCompanyCtrl.clear();
@@ -322,11 +318,10 @@ class _AdminHomePageState extends State<AdminHomePage>
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => StatefulBuilder(
+      useSafeArea: true,
+      builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          ),
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
           child: Container(
             decoration: const BoxDecoration(
               color: Color(0xFF0D1B2E),
@@ -448,10 +443,10 @@ class _AdminHomePageState extends State<AdminHomePage>
                               });
                           if (!mounted) return;
                           Navigator.pop(context);
-                          _showSnack('Job posted successfully! ✅');
+                          _showSnack('Job posted! ✅');
                           _loadJobs();
                         } catch (e) {
-                          _showSnack('Failed to post: $e');
+                          _showSnack('Failed: $e');
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -480,12 +475,14 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 
-  // ── View user detail ──────────────────────────────────────────────────────
+  // ── User detail sheet ─────────────────────────────────────────────────────
+
   void _showUserDetail(Map<String, dynamic> user) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => Container(
         decoration: const BoxDecoration(
           color: Color(0xFF0D1B2E),
@@ -606,6 +603,27 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 
+  // ── Profile sheet ─────────────────────────────────────────────────────────
+
+  void _showProfileSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _AdminProfileSheet(
+        name: name,
+        email: email,
+        imageUrl: imageUrl,
+        department: department,
+        onLogout: () {
+          Navigator.pop(context);
+          _logout();
+        },
+      ),
+    );
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   Color _roleColor(String role) {
@@ -694,7 +712,6 @@ class _AdminHomePageState extends State<AdminHomePage>
     ),
   );
 
-  // ✅ FIXED: Added missing _actionTile method
   Widget _actionTile(
     IconData icon,
     String label,
@@ -747,447 +764,449 @@ class _AdminHomePageState extends State<AdminHomePage>
     );
   }
 
-  void _showProfileSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _AdminProfileSheet(
-        name: name,
-        email: email,
-        imageUrl: imageUrl,
-        department: department,
-        onLogout: () {
-          Navigator.pop(context);
-          _logout();
-        },
-      ),
-    );
-  }
+  // ── BUILD ─────────────────────────────────────────────────────────────────
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // BUILD
-  // ─────────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF060D1F),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: NestedScrollView(
-          headerSliverBuilder: (_, __) => [
-            SliverAppBar(
-              expandedHeight: 150,
-              pinned: true,
-              floating: false,
-              automaticallyImplyLeading: false,
-              backgroundColor: const Color(0xFF060D1F),
-              bottom: TabBar(
-                controller: _tabController,
-                indicatorColor: const Color(0xFFFF6B35),
-                indicatorWeight: 2.5,
-                labelColor: const Color(0xFFFF6B35),
-                unselectedLabelColor: Colors.white.withOpacity(0.4),
-                labelStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-                tabs: const [
-                  Tab(text: 'Dashboard'),
-                  Tab(text: 'Users'),
-                  Tab(text: 'Jobs'),
-                ],
-              ),
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2A1200), Color(0xFF060D1F)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+      // ✅ THE FIX: SafeArea wraps the ENTIRE body.
+      // No SliverAppBar, no NestedScrollView, no manual padding math.
+      // Flutter automatically insets content away from status bar & home bar.
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: Column(
+            children: [
+              // ── Header + TabBar ──────────────────────────────────
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF2A1200), Color(0xFF060D1F)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                  padding: const EdgeInsets.fromLTRB(20, 52, 20, 48),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Admin Dashboard 🛡️',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white.withOpacity(0.5),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              name,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                            if (department.isNotEmpty)
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  children: [
+                    // ── Top row: title + actions ─────────────────
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                department,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFFFF6B35),
+                                'Admin Dashboard 🛡️',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white.withOpacity(0.5),
                                 ),
                               ),
-                          ],
-                        ),
-                      ),
-                      _iconBtn(Icons.notifications_outlined, () {}),
-                      const SizedBox(width: 10),
-                      GestureDetector(
-                        onTap: _showProfileSheet,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFFF6B35),
-                              width: 2,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: const Color(0xFF2A1200),
-                            backgroundImage: imageUrl.isNotEmpty
-                                ? NetworkImage(imageUrl)
-                                : null,
-                            child: imageUrl.isEmpty
-                                ? Text(
-                                    _initials,
-                                    style: const TextStyle(
-                                      color: Color(0xFFFF6B35),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              // ── TAB 1 — DASHBOARD ────────────────────────────────
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Overview',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _statsLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF6B35),
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : Row(
-                            children: [
-                              _StatCard(
-                                label: 'Students',
-                                value: '$_totalStudents',
-                                icon: Icons.school_outlined,
-                                color: const Color(0xFF1E90FF),
+                              const SizedBox(height: 2),
+                              Text(
+                                name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
-                              const SizedBox(width: 10),
-                              _StatCard(
-                                label: 'Alumni',
-                                value: '$_totalAlumni',
-                                icon: Icons.people_outline,
-                                color: const Color(0xFF00C9A7),
-                              ),
-                              const SizedBox(width: 10),
-                              _StatCard(
-                                label: 'Admins',
-                                value: '$_totalAdmins',
-                                icon: Icons.admin_panel_settings_outlined,
-                                color: const Color(0xFFFF6B35),
-                              ),
+                              if (department.isNotEmpty)
+                                Text(
+                                  department,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFFF6B35),
+                                  ),
+                                ),
                             ],
                           ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'Quick Actions',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _actionTile(
-                          Icons.post_add_outlined,
-                          'Post Job',
-                          const Color(0xFFFF6B35),
-                          onTap: _showPostJobSheet,
                         ),
-                        _actionTile(
-                          Icons.people_outline,
-                          'All Users',
-                          const Color(0xFF1E90FF),
-                          onTap: () => _tabController.animateTo(1),
-                        ),
-                        _actionTile(
-                          Icons.work_outline,
-                          'All Jobs',
-                          const Color(0xFF00C9A7),
-                          onTap: () => _tabController.animateTo(2),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 28),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Recent Users',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
+                        _iconBtn(Icons.notifications_outlined, () {}),
+                        const SizedBox(width: 10),
                         GestureDetector(
-                          onTap: () => _tabController.animateTo(1),
-                          child: const Text(
-                            'See all',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFFFF6B35),
-                              fontWeight: FontWeight.w600,
+                          onTap: _showProfileSheet,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFFFF6B35),
+                                width: 2,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: const Color(0xFF2A1200),
+                              backgroundImage: imageUrl.isNotEmpty
+                                  ? NetworkImage(imageUrl)
+                                  : null,
+                              child: imageUrl.isEmpty
+                                  ? Text(
+                                      _initials,
+                                      style: const TextStyle(
+                                        color: Color(0xFFFF6B35),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    ..._allUsers
-                        .take(3)
-                        .map(
-                          (u) => _UserTile(
-                            user: u,
-                            roleColor: _roleColor(u['role']),
-                            onTap: () => _showUserDetail(u),
-                            onDelete: () => _deleteUser(u['uid'], u['name']),
-                          ),
-                        ),
+                    // ── TabBar ───────────────────────────────────
+                    TabBar(
+                      controller: _tabController,
+                      indicatorColor: const Color(0xFFFF6B35),
+                      indicatorWeight: 2.5,
+                      labelColor: const Color(0xFFFF6B35),
+                      unselectedLabelColor: Colors.white.withOpacity(0.4),
+                      labelStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      tabs: const [
+                        Tab(text: 'Dashboard'),
+                        Tab(text: 'Users'),
+                        Tab(text: 'Jobs'),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              // ── TAB 2 — USERS ────────────────────────────────────
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: ['All', 'student', 'alumni', 'admin']
-                            .map(
-                              (r) => _FilterChip(
-                                label: r == 'All'
-                                    ? r
-                                    : r[0].toUpperCase() + r.substring(1),
-                                selected: _filterRole == r,
-                                onTap: () {
-                                  setState(() => _filterRole = r);
-                                  _loadAllUsers();
-                                },
+              // ── Tab content ──────────────────────────────────────
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // ── TAB 1 — DASHBOARD ──────────────────────────
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Overview',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _statsLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFFF6B35),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  children: [
+                                    _StatCard(
+                                      label: 'Students',
+                                      value: '$_totalStudents',
+                                      icon: Icons.school_outlined,
+                                      color: const Color(0xFF1E90FF),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _StatCard(
+                                      label: 'Alumni',
+                                      value: '$_totalAlumni',
+                                      icon: Icons.people_outline,
+                                      color: const Color(0xFF00C9A7),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _StatCard(
+                                      label: 'Admins',
+                                      value: '$_totalAdmins',
+                                      icon: Icons.admin_panel_settings_outlined,
+                                      color: const Color(0xFFFF6B35),
+                                    ),
+                                  ],
+                                ),
+                          const SizedBox(height: 28),
+                          const Text(
+                            'Quick Actions',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _actionTile(
+                                Icons.post_add_outlined,
+                                'Post Job',
+                                const Color(0xFFFF6B35),
+                                onTap: _showPostJobSheet,
                               ),
-                            )
-                            .toList(),
+                              _actionTile(
+                                Icons.people_outline,
+                                'All Users',
+                                const Color(0xFF1E90FF),
+                                onTap: () => _tabController.animateTo(1),
+                              ),
+                              _actionTile(
+                                Icons.work_outline,
+                                'All Jobs',
+                                const Color(0xFF00C9A7),
+                                onTap: () => _tabController.animateTo(2),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Recent Users',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _tabController.animateTo(1),
+                                child: const Text(
+                                  'See all',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFFFF6B35),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ..._allUsers
+                              .take(3)
+                              .map(
+                                (u) => _UserTile(
+                                  user: u,
+                                  roleColor: _roleColor(u['role']),
+                                  onTap: () => _showUserDetail(u),
+                                  onDelete: () =>
+                                      _deleteUser(u['uid'], u['name']),
+                                ),
+                              ),
+                        ],
                       ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${_allUsers.length} users found',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.45),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: _loadAllUsers,
-                          child: const Text(
-                            'Refresh',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFFF6B35),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: _usersLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF6B35),
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : _allUsers.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No users found.',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.35),
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                            itemCount: _allUsers.length,
-                            itemBuilder: (_, i) => _UserTile(
-                              user: _allUsers[i],
-                              roleColor: _roleColor(_allUsers[i]['role']),
-                              onTap: () => _showUserDetail(_allUsers[i]),
-                              onDelete: () => _deleteUser(
-                                _allUsers[i]['uid'],
-                                _allUsers[i]['name'],
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              ),
 
-              // ── TAB 3 — JOBS ─────────────────────────────────────
-              Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // ── TAB 2 — USERS ──────────────────────────────
+                    Column(
                       children: [
-                        Text(
-                          '${_jobs.length} jobs posted',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.45),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: ['All', 'student', 'alumni', 'admin']
+                                  .map(
+                                    (r) => _FilterChip(
+                                      label: r == 'All'
+                                          ? r
+                                          : r[0].toUpperCase() + r.substring(1),
+                                      selected: _filterRole == r,
+                                      onTap: () {
+                                        setState(() => _filterRole = r);
+                                        _loadAllUsers();
+                                      },
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: _showPostJobSheet,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF6B35),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              '+ Post Job',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${_allUsers.length} users found',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.45),
+                                ),
                               ),
-                            ),
+                              GestureDetector(
+                                onTap: _loadAllUsers,
+                                child: const Text(
+                                  'Refresh',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFFF6B35),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                        Expanded(
+                          child: _usersLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFFF6B35),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : _allUsers.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'No users found.',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.35),
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    20,
+                                  ),
+                                  itemCount: _allUsers.length,
+                                  itemBuilder: (_, i) => _UserTile(
+                                    user: _allUsers[i],
+                                    roleColor: _roleColor(_allUsers[i]['role']),
+                                    onTap: () => _showUserDetail(_allUsers[i]),
+                                    onDelete: () => _deleteUser(
+                                      _allUsers[i]['uid'],
+                                      _allUsers[i]['name'],
+                                    ),
+                                  ),
+                                ),
                         ),
                       ],
                     ),
-                  ),
-                  Expanded(
-                    child: _jobsLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF6B35),
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : _jobs.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.work_off_outlined,
-                                  color: Colors.white.withOpacity(0.25),
-                                  size: 40,
+
+                    // ── TAB 3 — JOBS ───────────────────────────────
+                    Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${_jobs.length} jobs posted',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.45),
                                 ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  'No jobs posted yet.',
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.35),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                GestureDetector(
-                                  onTap: _showPostJobSheet,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF6B35),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'Post First Job',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                            itemCount: _jobs.length,
-                            itemBuilder: (_, i) => _JobTile(
-                              job: _jobs[i],
-                              onDelete: () => _deleteJob(
-                                _jobs[i]['id'],
-                                _jobs[i]['title'] ?? '',
                               ),
-                            ),
+                              GestureDetector(
+                                onTap: _showPostJobSheet,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 7,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF6B35),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    '+ Post Job',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                  ),
-                ],
+                        ),
+                        Expanded(
+                          child: _jobsLoading
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFFFF6B35),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : _jobs.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.work_off_outlined,
+                                        color: Colors.white.withOpacity(0.25),
+                                        size: 40,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'No jobs posted yet.',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.35),
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      GestureDetector(
+                                        onTap: _showPostJobSheet,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 10,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFF6B35),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            'Post First Job',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    20,
+                                  ),
+                                  itemCount: _jobs.length,
+                                  itemBuilder: (_, i) => _JobTile(
+                                    job: _jobs[i],
+                                    onDelete: () => _deleteJob(
+                                      _jobs[i]['id'],
+                                      _jobs[i]['title'] ?? '',
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1675,80 +1694,4 @@ class _AdminProfileSheet extends StatelessWidget {
       ],
     ),
   );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BOTTOM NAV
-// ─────────────────────────────────────────────────────────────────────────────
-class _AdminBottomNav extends StatefulWidget {
-  final VoidCallback onLogout;
-  const _AdminBottomNav({required this.onLogout});
-  @override
-  State<_AdminBottomNav> createState() => _AdminBottomNavState();
-}
-
-class _AdminBottomNavState extends State<_AdminBottomNav> {
-  int _sel = 0;
-  @override
-  Widget build(BuildContext context) {
-    const items = [
-      {
-        'icon': Icons.dashboard_outlined,
-        'active': Icons.dashboard,
-        'label': 'Dashboard',
-      },
-      {'icon': Icons.people_outline, 'active': Icons.people, 'label': 'Users'},
-      {'icon': Icons.work_outline, 'active': Icons.work, 'label': 'Jobs'},
-      {
-        'icon': Icons.person_outline,
-        'active': Icons.person,
-        'label': 'Profile',
-      },
-    ];
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D1B2E),
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.07))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(items.length, (i) {
-          final active = _sel == i;
-          return GestureDetector(
-            onTap: () => setState(() => _sel = i),
-            behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 64,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    active
-                        ? items[i]['active'] as IconData
-                        : items[i]['icon'] as IconData,
-                    color: active
-                        ? const Color(0xFFFF6B35)
-                        : Colors.white.withOpacity(0.35),
-                    size: 22,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    items[i]['label'] as String,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-                      color: active
-                          ? const Color(0xFFFF6B35)
-                          : Colors.white.withOpacity(0.35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
 }

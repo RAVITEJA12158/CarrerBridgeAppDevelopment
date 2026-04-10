@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import './login.dart';
 import './user_cache.dart';
 import './job_detail_page.dart';
+import './chat_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,6 +40,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   // ── Search ────────────────────────────────────────────────────────────────
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+
+  // ── Job tab filter: 0=All, 1=Admin, 2=Alumni ──────────────────────────────
+  int _jobTabFilter = 0;
 
   // ── Real-time stream subscriptions ───────────────────────────────────────
   StreamSubscription? _studentDocSub;
@@ -90,11 +95,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // ── Filtered jobs based on search query ──────────────────────────────────
+  // ── Filtered jobs (search + tab filter) ─────────────────────────────────
   List<Map<String, dynamic>> get _filteredJobs {
-    if (_searchQuery.isEmpty) return _jobs;
+    var list = _jobs;
+    if (_jobTabFilter == 1) {
+      list = list
+          .where(
+            (j) =>
+                (j['postedByRole'] ?? 'admin').toString().toLowerCase() ==
+                'admin',
+          )
+          .toList();
+    } else if (_jobTabFilter == 2) {
+      list = list
+          .where(
+            (j) =>
+                (j['postedByRole'] ?? '').toString().toLowerCase() == 'alumni',
+          )
+          .toList();
+    }
+    if (_searchQuery.isEmpty) return list;
     final q = _searchQuery.toLowerCase();
-    return _jobs.where((j) {
+    return list.where((j) {
       return (j['title'] as String).toLowerCase().contains(q) ||
           (j['company'] as String).toLowerCase().contains(q) ||
           (j['location'] as String).toLowerCase().contains(q) ||
@@ -993,6 +1015,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                 ),
 
+                // ── Job Source Filter ────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _JobFilterChip(
+                            label: 'All Jobs',
+                            active: _jobTabFilter == 0,
+                            onTap: () => setState(() => _jobTabFilter = 0),
+                          ),
+                          const SizedBox(width: 8),
+                          _JobFilterChip(
+                            label: 'Admin Jobs',
+                            active: _jobTabFilter == 1,
+                            onTap: () => setState(() => _jobTabFilter = 1),
+                          ),
+                          const SizedBox(width: 8),
+                          _JobFilterChip(
+                            label: 'Alumni Jobs',
+                            active: _jobTabFilter == 2,
+                            onTap: () => setState(() => _jobTabFilter = 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 // ── Jobs List ──────────────────────────────────────────
                 _jobsLoading
                     ? SliverToBoxAdapter(
@@ -1240,6 +1293,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         delegate: SliverChildBuilderDelegate(
                           (_, i) => _ConnectionTile(
                             connection: _acceptedConnections[i],
+                            parentContext: context,
                           ),
                           childCount: _acceptedConnections.length,
                         ),
@@ -1553,16 +1607,21 @@ class _JobCard extends StatelessWidget {
               job['applyLink'].toString().isNotEmpty) ...[
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () {},
-              child: Row(
+              onTap: () async {
+                final rawUrl = job['applyLink'].toString().trim();
+                final url = rawUrl.startsWith('http')
+                    ? rawUrl
+                    : 'https://$rawUrl';
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Row(
                 children: [
-                  const Icon(
-                    Icons.open_in_new,
-                    size: 12,
-                    color: Color(0xFF1E90FF),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
+                  Icon(Icons.open_in_new, size: 12, color: Color(0xFF1E90FF)),
+                  SizedBox(width: 4),
+                  Text(
                     'Apply Now',
                     style: TextStyle(
                       fontSize: 11,
@@ -2884,12 +2943,17 @@ class _TapTile extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _ConnectionTile extends StatelessWidget {
   final Map<String, dynamic> connection;
-  const _ConnectionTile({required this.connection});
+  final BuildContext parentContext;
+  const _ConnectionTile({
+    required this.connection,
+    required this.parentContext,
+  });
 
   @override
   Widget build(BuildContext context) {
     final String alumniName = connection['alumniName'] ?? 'Alumni';
     final String alumniEmail = connection['alumniEmail'] ?? '';
+    final String alumniId = connection['alumniId'] ?? '';
     final parts = alumniName.trim().split(' ');
     final initials = parts.length >= 2
         ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
@@ -3019,6 +3083,35 @@ class _ConnectionTile extends StatelessWidget {
               ],
             ),
           ),
+          // ── Chat button ────────────────────────────────────────
+          if (alumniId.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  parentContext,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        ChatPage(peerId: alumniId, peerName: alumniName),
+                  ),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E90FF).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF1E90FF).withOpacity(0.3),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.chat_bubble_outline,
+                  color: Color(0xFF1E90FF),
+                  size: 18,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -3677,22 +3770,77 @@ class _SavedJobCard extends StatelessWidget {
           if (job['applyLink'] != null &&
               job['applyLink'].toString().isNotEmpty) ...[
             const SizedBox(height: 8),
-            Row(
-              children: const [
-                Icon(Icons.open_in_new, size: 12, color: Color(0xFF1E90FF)),
-                SizedBox(width: 4),
-                Text(
-                  'Apply Now',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF1E90FF),
-                    fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: () async {
+                final rawUrl = job['applyLink'].toString().trim();
+                final url = rawUrl.startsWith('http')
+                    ? rawUrl
+                    : 'https://$rawUrl';
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Row(
+                children: [
+                  Icon(Icons.open_in_new, size: 12, color: Color(0xFF1E90FF)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Apply Now',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF1E90FF),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JOB FILTER CHIP (Admin / Alumni / All tabs)
+// ─────────────────────────────────────────────────────────────────────────────
+class _JobFilterChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _JobFilterChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFF1E90FF) : const Color(0xFF0D1B2E),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active
+                ? const Color(0xFF1E90FF)
+                : Colors.white.withOpacity(0.15),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            color: active ? Colors.white : Colors.white54,
+          ),
+        ),
       ),
     );
   }
