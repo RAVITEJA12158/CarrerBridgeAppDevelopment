@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _jobsLoading = true;
   Set<String> _savedJobIds = {};
   Set<String> _pendingAlumniIds = {};
+  Set<String> _acceptedAlumniIds = {};
   List<Map<String, dynamic>> _acceptedConnections = [];
   int _currentTab = 0;
 
@@ -202,11 +203,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         .listen((doc) {
           if (!mounted || !doc.exists) return;
           final List accepted = doc.data()?['acceptedAlumni'] ?? [];
-          setState(
-            () => _acceptedConnections = List<Map<String, dynamic>>.from(
-              accepted,
-            ),
-          );
+          final connections = List<Map<String, dynamic>>.from(accepted);
+          setState(() {
+            _acceptedConnections = connections;
+            _acceptedAlumniIds = Set<String>.from(
+              connections
+                  .map((e) => (e['alumniId'] as String? ?? ''))
+                  .where((id) => id.isNotEmpty),
+            );
+          });
         }, onError: (e) => debugPrint('Student doc stream error: $e'));
 
     _pendingRequestsSub = FirebaseFirestore.instance
@@ -1244,6 +1249,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 isPending: _pendingAlumniIds.contains(
                                   _alumni[i]['uid'],
                                 ),
+                                isConnected: _acceptedAlumniIds.contains(
+                                  _alumni[i]['uid'],
+                                ),
                                 onConnect: () =>
                                     _sendConnectRequest(_alumni[i]),
                               ),
@@ -1326,6 +1334,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             alumni: _alumni,
             savedJobIds: _savedJobIds,
             pendingAlumniIds: _pendingAlumniIds,
+            acceptedAlumniIds: _acceptedAlumniIds,
             onSaveJob: _toggleSaveJob,
             onJobTap: _showJobDetail,
             onConnect: _sendConnectRequest,
@@ -1337,6 +1346,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             allJobs: _jobs,
             onUnsave: _toggleSaveJob,
           ),
+
+          // ── Tab 3: MY CONNECTIONS ─────────────────────────────
+          _ConnectionsTab(connections: _acceptedConnections),
         ],
       ),
       bottomNavigationBar: _BottomNav(
@@ -1653,11 +1665,13 @@ class _JobCard extends StatelessWidget {
 class _AlumniCard extends StatelessWidget {
   final Map<String, dynamic> alumni;
   final bool isPending;
+  final bool isConnected;
   final VoidCallback onConnect;
 
   const _AlumniCard({
     required this.alumni,
     required this.isPending,
+    required this.isConnected,
     required this.onConnect,
   });
 
@@ -1766,18 +1780,22 @@ class _AlumniCard extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           GestureDetector(
-            onTap: isPending ? null : onConnect,
+            onTap: (isPending || isConnected) ? null : onConnect,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
-                color: isPending
+                color: isConnected
+                    ? Colors.green.withValues(alpha: 0.12)
+                    : isPending
                     ? Colors.white.withValues(alpha: 0.06)
                     : c.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isPending
+                  color: isConnected
+                      ? Colors.green.withValues(alpha: 0.4)
+                      : isPending
                       ? Colors.white.withValues(alpha: 0.12)
                       : c.withValues(alpha: 0.4),
                 ),
@@ -1786,17 +1804,31 @@ class _AlumniCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    isPending ? Icons.hourglass_top : Icons.person_add_outlined,
+                    isConnected
+                        ? Icons.check_circle_outline
+                        : isPending
+                        ? Icons.hourglass_top
+                        : Icons.person_add_outlined,
                     size: 12,
-                    color: isPending ? Colors.white.withValues(alpha: 0.35) : c,
+                    color: isConnected
+                        ? Colors.green
+                        : isPending
+                        ? Colors.white.withValues(alpha: 0.35)
+                        : c,
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    isPending ? 'Pending' : 'Connect',
+                    isConnected
+                        ? 'Connected'
+                        : isPending
+                        ? 'Pending'
+                        : 'Connect',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isPending
+                      color: isConnected
+                          ? Colors.green
+                          : isPending
                           ? Colors.white.withValues(alpha: 0.35)
                           : c,
                     ),
@@ -2962,10 +2994,22 @@ class _TapTile extends StatelessWidget {
 class _ConnectionTile extends StatelessWidget {
   final Map<String, dynamic> connection;
   final BuildContext parentContext;
+  final int index;
   const _ConnectionTile({
     required this.connection,
     required this.parentContext,
+    this.index = 0,
   });
+
+  // accent colour cycles per card
+  static const _accents = [
+    Color(0xFF1E90FF),
+    Color(0xFF00C9A7),
+    Color(0xFFA78BFA),
+    Color(0xFFFFA940),
+    Color(0xFFFF6B8A),
+    Color(0xFF34D399),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -2976,162 +3020,272 @@ class _ConnectionTile extends StatelessWidget {
     final initials = parts.length >= 2
         ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
         : alumniName.substring(0, alumniName.length >= 2 ? 2 : 1).toUpperCase();
+    final Color accent = _accents[index % _accents.length];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF00C9A7).withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF00C9A7).withValues(alpha: 0.25),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
-              border: Border.all(
-                color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF00C9A7),
-                ),
-              ),
-            ),
+        color: const Color(0xFF0D1B2E),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accent.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Top row: avatar + name + badge ───────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
+                // Avatar with glowing ring
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withValues(alpha: 0.3),
+                        accent.withValues(alpha: 0.08),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(
+                      color: accent.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: accent,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
                         alumniName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
                           color: Colors.white,
+                          letterSpacing: 0.1,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00C9A7).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: const Text(
-                        'Connected ✓',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: Color(0xFF00C9A7),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                GestureDetector(
-                  onTap: () {
-                    if (alumniEmail.isNotEmpty) {
-                      Clipboard.setData(ClipboardData(text: alumniEmail));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('📋 Copied: $alumniEmail'),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    }
-                  },
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.email_outlined,
-                        size: 13,
-                        color: Color(0xFF1E90FF),
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          alumniEmail.isNotEmpty
-                              ? alumniEmail
-                              : 'Email not available',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: alumniEmail.isNotEmpty
-                                ? const Color(0xFF1E90FF)
-                                : Colors.white.withValues(alpha: 0.35),
-                            decoration: alumniEmail.isNotEmpty
-                                ? TextDecoration.underline
-                                : TextDecoration.none,
-                            decorationColor: const Color(0xFF1E90FF),
+                      const SizedBox(height: 5),
+                      // Connected badge
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF00C9A7),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF00C9A7,
+                                  ).withValues(alpha: 0.6),
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Connected Alumni',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF00C9A7),
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
                       ),
-                      if (alumniEmail.isNotEmpty) ...[
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.copy,
-                          size: 11,
-                          color: Color(0xFF1E90FF),
-                        ),
-                      ],
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          // ── Chat button ────────────────────────────────────────
-          if (alumniId.isNotEmpty)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  parentContext,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        ChatPage(peerId: alumniId, peerName: alumniName),
-                  ),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E90FF).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  color: Color(0xFF1E90FF),
-                  size: 18,
-                ),
+
+          // ── Divider ──────────────────────────────────────────
+          Container(
+            height: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  accent.withValues(alpha: 0.3),
+                  Colors.transparent,
+                ],
               ),
             ),
+          ),
+
+          // ── Bottom row: email + chat button ──────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Row(
+              children: [
+                // Email chip
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (alumniEmail.isNotEmpty) {
+                        Clipboard.setData(ClipboardData(text: alumniEmail));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF00C9A7),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(child: Text('Copied: $alumniEmail')),
+                              ],
+                            ),
+                            backgroundColor: const Color(0xFF0D1B2E),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.alternate_email,
+                            size: 13,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              alumniEmail.isNotEmpty ? alumniEmail : 'No email',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: alumniEmail.isNotEmpty
+                                    ? Colors.white.withValues(alpha: 0.65)
+                                    : Colors.white.withValues(alpha: 0.25),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (alumniEmail.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Icon(
+                              Icons.copy_outlined,
+                              size: 11,
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Chat button
+                if (alumniId.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        parentContext,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ChatPage(peerId: alumniId, peerName: alumniName),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [accent, accent.withValues(alpha: 0.75)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.35),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.chat_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Chat',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -3146,6 +3300,7 @@ class _ExploreTab extends StatefulWidget {
   final List<Map<String, dynamic>> alumni;
   final Set<String> savedJobIds;
   final Set<String> pendingAlumniIds;
+  final Set<String> acceptedAlumniIds;
   final void Function(String) onSaveJob;
   final void Function(Map<String, dynamic>) onJobTap;
   final void Function(Map<String, dynamic>) onConnect;
@@ -3155,6 +3310,7 @@ class _ExploreTab extends StatefulWidget {
     required this.alumni,
     required this.savedJobIds,
     required this.pendingAlumniIds,
+    required this.acceptedAlumniIds,
     required this.onSaveJob,
     required this.onJobTap,
     required this.onConnect,
@@ -3392,6 +3548,9 @@ class _ExploreTabState extends State<_ExploreTab> {
                       (a) => _AlumniListTile(
                         alumni: a,
                         isPending: widget.pendingAlumniIds.contains(a['uid']),
+                        isConnected: widget.acceptedAlumniIds.contains(
+                          a['uid'],
+                        ),
                         onConnect: () => widget.onConnect(a),
                       ),
                     ),
@@ -3451,10 +3610,12 @@ class _FilterChip extends StatelessWidget {
 class _AlumniListTile extends StatelessWidget {
   final Map<String, dynamic> alumni;
   final bool isPending;
+  final bool isConnected;
   final VoidCallback onConnect;
   const _AlumniListTile({
     required this.alumni,
     required this.isPending,
+    required this.isConnected,
     required this.onConnect,
   });
 
@@ -3547,27 +3708,39 @@ class _AlumniListTile extends StatelessWidget {
             ),
           ),
           GestureDetector(
-            onTap: isPending ? null : onConnect,
+            onTap: (isPending || isConnected) ? null : onConnect,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
-                color: isPending
+                color: isConnected
+                    ? Colors.green.withValues(alpha: 0.12)
+                    : isPending
                     ? Colors.white.withValues(alpha: 0.06)
                     : c.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isPending
+                  color: isConnected
+                      ? Colors.green.withValues(alpha: 0.4)
+                      : isPending
                       ? Colors.white.withValues(alpha: 0.12)
                       : c.withValues(alpha: 0.4),
                 ),
               ),
               child: Text(
-                isPending ? 'Pending' : 'Connect',
+                isConnected
+                    ? 'Connected'
+                    : isPending
+                    ? 'Pending'
+                    : 'Connect',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isPending ? Colors.white.withValues(alpha: 0.35) : c,
+                  color: isConnected
+                      ? Colors.green
+                      : isPending
+                      ? Colors.white.withValues(alpha: 0.35)
+                      : c,
                 ),
               ),
             ),
@@ -3871,8 +4044,232 @@ class _JobFilterChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BOTTOM NAV
+// CONNECTIONS TAB — student's accepted alumni connections
 // ─────────────────────────────────────────────────────────────────────────────
+class _ConnectionsTab extends StatelessWidget {
+  final List<Map<String, dynamic>> connections;
+  const _ConnectionsTab({required this.connections});
+
+  @override
+  Widget build(BuildContext context) {
+    if (connections.isEmpty) {
+      return Container(
+        color: const Color(0xFF060D1F),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Decorative rings
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 110,
+                    height: 110,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.08),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF1E90FF).withValues(alpha: 0.1),
+                      border: Border.all(
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.people_outline,
+                      color: Color(0xFF1E90FF),
+                      size: 26,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              const Text(
+                'No Connections Yet',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 48),
+                child: Text(
+                  'Send connection requests to alumni from the Home or Explore tab.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      color: const Color(0xFF060D1F),
+      child: CustomScrollView(
+        slivers: [
+          // ── Header ─────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                MediaQuery.of(context).padding.top + 20,
+                20,
+                20,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'My Connections',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${connections.length} alumni connected',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF7FA7C9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Stats badge
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF1E90FF), Color(0xFF0A5FBF)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF1E90FF,
+                              ).withValues(alpha: 0.35),
+                              blurRadius: 14,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${connections.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Info bar
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF00C9A7).withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.verified_outlined,
+                          color: Color(0xFF00C9A7),
+                          size: 16,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Tap Chat to message your connected alumni directly.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.6),
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Connection cards ────────────────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => _ConnectionTile(
+                  connection: connections[i],
+                  parentContext: context,
+                  index: i,
+                ),
+                childCount: connections.length,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTabChanged;
@@ -3885,6 +4282,11 @@ class _BottomNav extends StatelessWidget {
       'icon': Icons.bookmark_outline,
       'active': Icons.bookmark,
       'label': 'Saved',
+    },
+    {
+      'icon': Icons.people_outline,
+      'active': Icons.people,
+      'label': 'Connections',
     },
   ];
 
