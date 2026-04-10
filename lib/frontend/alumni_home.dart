@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login.dart';
+import 'chat_page.dart';
 
 class AlumniHomePage extends StatefulWidget {
   const AlumniHomePage({super.key});
@@ -39,6 +40,14 @@ class _AlumniHomePageState extends State<AlumniHomePage>
   // ================= TAB =================
   int _currentTab = 0;
 
+  // ================= JOB POST =================
+  final _jobTitleCtrl = TextEditingController();
+  final _jobCompanyCtrl = TextEditingController();
+  final _jobLocationCtrl = TextEditingController();
+  final _jobDescCtrl = TextEditingController();
+  final _jobLinkCtrl = TextEditingController();
+  String _jobTypeSelected = 'Full-time';
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +69,11 @@ class _AlumniHomePageState extends State<AlumniHomePage>
     _fadeController.dispose();
     _requestsSub?.cancel();
     _acceptedSub?.cancel();
+    _jobTitleCtrl.dispose();
+    _jobCompanyCtrl.dispose();
+    _jobLocationCtrl.dispose();
+    _jobDescCtrl.dispose();
+    _jobLinkCtrl.dispose();
     super.dispose();
   }
 
@@ -384,7 +398,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
         decoration: BoxDecoration(
           color: const Color(0xFF0D1B2E),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -491,7 +505,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: Colors.blueAccent.withOpacity(0.2),
+              backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
               // ✅ _initial() never crashes — returns '?' for empty
               child: Text(
                 _initial(studentName),
@@ -518,7 +532,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.15),
+                      color: Colors.green.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(
@@ -535,7 +549,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.15),
+                      color: Colors.red.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.close, color: Colors.red, size: 20),
@@ -573,16 +587,15 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final con = _accepted[i];
-
-        // ✅ _safeName handles null + empty + whitespace
         final studentName = _safeName(con['studentName'], 'Unknown Student');
         final studentEmail = _safeName(con['studentEmail'], 'No email');
+        final studentId = _safeName(con['studentId'], '');
 
         return Container(
           decoration: BoxDecoration(
             color: const Color(0xFF0D1B2E),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.green.withOpacity(0.2)),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -590,8 +603,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: Colors.green.withOpacity(0.2),
-              // ✅ _initial() never crashes — returns '?' for empty
+              backgroundColor: Colors.green.withValues(alpha: 0.2),
               child: Text(
                 _initial(studentName),
                 style: const TextStyle(color: Colors.green),
@@ -618,7 +630,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.15),
+                    color: Colors.green.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
@@ -633,10 +645,43 @@ class _AlumniHomePageState extends State<AlumniHomePage>
               ],
             ),
             isThreeLine: true,
-            trailing: const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-              size: 22,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 22),
+                // ── Chat button ────────────────────────────────────
+                if (studentId.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatPage(
+                            peerId: studentId,
+                            peerName: studentName,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble_outline,
+                        color: Color(0xFF1E90FF),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         );
@@ -653,7 +698,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
           const SizedBox(height: 20),
           CircleAvatar(
             radius: 55,
-            backgroundColor: Colors.blueAccent.withOpacity(0.2),
+            backgroundColor: Colors.blueAccent.withValues(alpha: 0.2),
             backgroundImage: imageUrl.isNotEmpty
                 ? NetworkImage(imageUrl)
                 : null,
@@ -704,6 +749,230 @@ class _AlumniHomePageState extends State<AlumniHomePage>
     );
   }
 
+  // ---- POST JOB TAB ----
+  Widget _buildPostJobPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.work_outline, color: Colors.white, size: 28),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Post a Job',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Help students with opportunities',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Job Type',
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: ['Full-time', 'Internship', 'Part-time']
+                .map(
+                  (t) => GestureDetector(
+                    onTap: () => setState(() => _jobTypeSelected = t),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _jobTypeSelected == t
+                            ? const Color(0xFF1E90FF)
+                            : Colors.white.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _jobTypeSelected == t
+                              ? const Color(0xFF1E90FF)
+                              : Colors.white.withValues(alpha: 0.15),
+                        ),
+                      ),
+                      child: Text(
+                        t,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _jobTypeSelected == t
+                              ? Colors.white
+                              : Colors.white54,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 20),
+          _jobField(_jobTitleCtrl, 'Job Title *', Icons.work_outline),
+          const SizedBox(height: 12),
+          _jobField(_jobCompanyCtrl, 'Company *', Icons.business_outlined),
+          const SizedBox(height: 12),
+          _jobField(_jobLocationCtrl, 'Location', Icons.location_on_outlined),
+          const SizedBox(height: 12),
+          _jobField(
+            _jobDescCtrl,
+            'Description',
+            Icons.description_outlined,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 12),
+          _jobField(_jobLinkCtrl, 'Apply Link (URL)', Icons.link_outlined),
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _postJob,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E90FF),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: const Text(
+                'Post Job',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _jobField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          hint,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.5),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: TextField(
+            controller: ctrl,
+            maxLines: maxLines,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.white.withValues(alpha: 0.25),
+                fontSize: 13,
+              ),
+              prefixIcon: Icon(icon, color: const Color(0xFF1E90FF), size: 18),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 4,
+                vertical: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _postJob() async {
+    if (_jobTitleCtrl.text.trim().isEmpty ||
+        _jobCompanyCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Title and Company are required.')),
+      );
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance.collection('jobs').add({
+        'title': _jobTitleCtrl.text.trim(),
+        'company': _jobCompanyCtrl.text.trim(),
+        'location': _jobLocationCtrl.text.trim(),
+        'type': _jobTypeSelected,
+        'description': _jobDescCtrl.text.trim(),
+        'applyLink': _jobLinkCtrl.text.trim(),
+        'postedBy': FirebaseAuth.instance.currentUser?.uid ?? '',
+        'postedByRole': 'alumni',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      _jobTitleCtrl.clear();
+      _jobCompanyCtrl.clear();
+      _jobLocationCtrl.clear();
+      _jobDescCtrl.clear();
+      _jobLinkCtrl.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Job posted! Students can now see it.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        setState(() => _currentTab = 0);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+      }
+    }
+  }
+
   // ============================================================
   //  BUILD
   // ============================================================
@@ -713,6 +982,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       _buildHomePage(),
       _buildRequestsPage(),
       _buildConnectionsPage(),
+      _buildPostJobPage(),
       _buildProfilePage(),
     ];
 
@@ -720,6 +990,7 @@ class _AlumniHomePageState extends State<AlumniHomePage>
       "Dashboard",
       "Requests",
       "Connections",
+      "Post Job",
       "Profile",
     ];
 
@@ -783,6 +1054,11 @@ class _AlumniHomePageState extends State<AlumniHomePage>
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: "Connections",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.post_add_outlined),
+            activeIcon: Icon(Icons.post_add),
+            label: "Post Job",
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

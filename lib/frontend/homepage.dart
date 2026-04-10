@@ -483,10 +483,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E90FF).withOpacity(0.15),
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF1E90FF).withOpacity(0.3),
+                          color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
                         ),
                       ),
                       child: const Icon(
@@ -520,7 +520,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   'This project is a cross-platform mobile application built using Flutter, designed to streamline communication between alumni and current students of an institution.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     height: 1.6,
                   ),
                 ),
@@ -529,7 +529,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   'The system enables structured feedback collection, automated email notifications, and centralized data management using Firebase. The application includes authentication for users, an admin dashboard for managing feedback and user interactions, and a Firestore database to store and retrieve data in real time.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     height: 1.6,
                   ),
                 ),
@@ -538,7 +538,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   'Alumni can submit feedback or responses through the app, while students and administrators can view, filter, and manage the submitted information. EmailJS integration is used to automate email communication between users, ensuring quick and reliable message delivery without requiring a dedicated backend server.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     height: 1.6,
                   ),
                 ),
@@ -547,7 +547,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   'The project focuses on improving engagement between alumni and students, simplifying feedback workflows, and providing a scalable digital communication platform for academic institutions.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.75),
+                    color: Colors.white.withValues(alpha: 0.75),
                     height: 1.6,
                   ),
                 ),
@@ -612,10 +612,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00C9A7).withOpacity(0.15),
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFF00C9A7).withOpacity(0.3),
+                        color: const Color(0xFF00C9A7).withValues(alpha: 0.3),
                       ),
                     ),
                     child: const Icon(
@@ -640,7 +640,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 'Need help? Reach out to our developer directly.',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   height: 1.5,
                 ),
               ),
@@ -649,10 +649,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Colors.white.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFF00C9A7).withOpacity(0.25),
+                    color: const Color(0xFF00C9A7).withValues(alpha: 0.25),
                   ),
                 ),
                 child: Column(
@@ -662,7 +662,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       'Developer',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -680,7 +680,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       'Email',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -714,7 +714,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           Icon(
                             Icons.copy,
                             size: 14,
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ],
                       ),
@@ -727,10 +727,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E90FF).withOpacity(0.07),
+                  color: const Color(0xFF1E90FF).withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF1E90FF).withOpacity(0.15),
+                    color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
                   ),
                 ),
                 child: Row(
@@ -746,7 +746,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         'Tap the email above to copy it to your clipboard.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withOpacity(0.55),
+                          color: Colors.white.withValues(alpha: 0.55),
                           height: 1.4,
                         ),
                       ),
@@ -822,7 +822,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   'Good morning 👋',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Colors.white.withValues(alpha: 0.5),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -845,10 +845,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.07),
+                                color: Colors.white.withValues(alpha: 0.07),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: Colors.white.withValues(alpha: 0.1),
                                 ),
                               ),
                               child: Stack(
@@ -926,10 +926,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         Container(
                           height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.07),
+                            color: Colors.white.withValues(alpha: 0.07),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
                           child: Row(
@@ -937,7 +937,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               const SizedBox(width: 14),
                               Icon(
                                 Icons.search,
-                                color: Colors.white.withOpacity(0.35),
+                                color: Colors.white.withValues(alpha: 0.35),
                                 size: 20,
                               ),
                               const SizedBox(width: 10),
@@ -954,7 +954,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     hintText: 'Search jobs, internships...',
                                     hintStyle: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.white.withOpacity(0.35),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
                                     ),
                                     border: InputBorder.none,
                                     isDense: true,
@@ -972,7 +974,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     child: Icon(
                                       Icons.close,
                                       size: 16,
-                                      color: Colors.white.withOpacity(0.4),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.4,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1073,7 +1077,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   _searchQuery.isEmpty
                                       ? Icons.work_off_outlined
                                       : Icons.search_off,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   size: 42,
                                 ),
                                 const SizedBox(height: 10),
@@ -1083,7 +1087,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                       : 'No jobs found for "$_searchQuery"',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.35),
+                                    color: Colors.white.withValues(alpha: 0.35),
                                     fontSize: 13,
                                     height: 1.5,
                                   ),
@@ -1181,14 +1185,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 children: [
                                   Icon(
                                     Icons.error_outline,
-                                    color: Colors.white.withOpacity(0.3),
+                                    color: Colors.white.withValues(alpha: 0.3),
                                     size: 32,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     _alumniError!,
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.4),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.4,
+                                      ),
                                       fontSize: 12,
                                     ),
                                   ),
@@ -1211,14 +1217,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 children: [
                                   Icon(
                                     Icons.people_outline,
-                                    color: Colors.white.withOpacity(0.25),
+                                    color: Colors.white.withValues(alpha: 0.25),
                                     size: 36,
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'No alumni registered yet.',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.35),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -1386,14 +1394,14 @@ class _AllJobsPage extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.work_off_outlined,
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     size: 48,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'No jobs posted yet.',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.35),
+                      color: Colors.white.withValues(alpha: 0.35),
                       fontSize: 14,
                     ),
                   ),
@@ -1429,9 +1437,9 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1442,7 +1450,7 @@ class _InfoChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -1473,9 +1481,9 @@ class _JobCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1486,9 +1494,9 @@ class _JobCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: c.withOpacity(0.15),
+                  color: c.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: c.withOpacity(0.3)),
+                  border: Border.all(color: c.withValues(alpha: 0.3)),
                 ),
                 child: Icon(Icons.business_center, color: c, size: 22),
               ),
@@ -1510,7 +1518,7 @@ class _JobCard extends StatelessWidget {
                       job['company'],
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -1524,20 +1532,20 @@ class _JobCard extends StatelessWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     color: isSaved
-                        ? const Color(0xFF1E90FF).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.06),
+                        ? const Color(0xFF1E90FF).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSaved
-                          ? const Color(0xFF1E90FF).withOpacity(0.4)
-                          : Colors.white.withOpacity(0.1),
+                          ? const Color(0xFF1E90FF).withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.1),
                     ),
                   ),
                   child: Icon(
                     isSaved ? Icons.bookmark : Icons.bookmark_outline,
                     color: isSaved
                         ? const Color(0xFF1E90FF)
-                        : Colors.white.withOpacity(0.4),
+                        : Colors.white.withValues(alpha: 0.4),
                     size: 18,
                   ),
                 ),
@@ -1551,7 +1559,7 @@ class _JobCard extends StatelessWidget {
                 Icon(
                   Icons.location_on_outlined,
                   size: 12,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 3),
                 Flexible(
@@ -1559,7 +1567,7 @@ class _JobCard extends StatelessWidget {
                     job['location'],
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -1568,7 +1576,7 @@ class _JobCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: c.withOpacity(0.12),
+                  color: c.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -1588,7 +1596,7 @@ class _JobCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00C9A7).withOpacity(0.1),
+                    color: const Color(0xFF00C9A7).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: const Text(
@@ -1672,9 +1680,9 @@ class _AlumniCard extends StatelessWidget {
       width: 162,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -1684,8 +1692,8 @@ class _AlumniCard extends StatelessWidget {
             height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: c.withOpacity(0.15),
-              border: Border.all(color: c.withOpacity(0.4), width: 1.5),
+              color: c.withValues(alpha: 0.15),
+              border: Border.all(color: c.withValues(alpha: 0.4), width: 1.5),
             ),
             child: imageUrl.isNotEmpty
                 ? ClipOval(
@@ -1735,7 +1743,7 @@ class _AlumniCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               height: 1.3,
             ),
           ),
@@ -1744,7 +1752,7 @@ class _AlumniCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: c.withOpacity(0.12),
+                color: c.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1765,13 +1773,13 @@ class _AlumniCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: BoxDecoration(
                 color: isPending
-                    ? Colors.white.withOpacity(0.06)
-                    : c.withOpacity(0.15),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : c.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isPending
-                      ? Colors.white.withOpacity(0.12)
-                      : c.withOpacity(0.4),
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : c.withValues(alpha: 0.4),
                 ),
               ),
               child: Row(
@@ -1780,7 +1788,7 @@ class _AlumniCard extends StatelessWidget {
                   Icon(
                     isPending ? Icons.hourglass_top : Icons.person_add_outlined,
                     size: 12,
-                    color: isPending ? Colors.white.withOpacity(0.35) : c,
+                    color: isPending ? Colors.white.withValues(alpha: 0.35) : c,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -1788,7 +1796,9 @@ class _AlumniCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isPending ? Colors.white.withOpacity(0.35) : c,
+                      color: isPending
+                          ? Colors.white.withValues(alpha: 0.35)
+                          : c,
                     ),
                   ),
                 ],
@@ -1808,9 +1818,9 @@ class _AlumniCardSkeleton extends StatelessWidget {
     width: 148,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.04),
+      color: Colors.white.withValues(alpha: 0.04),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.white.withOpacity(0.07)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
     ),
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -1833,7 +1843,7 @@ class _AlumniCardSkeleton extends StatelessWidget {
         width: w,
         height: h,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: circular
               ? BorderRadius.circular(w)
               : BorderRadius.circular(radius),
@@ -1885,7 +1895,7 @@ class _ProfileBottomSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1896,7 +1906,7 @@ class _ProfileBottomSheet extends StatelessWidget {
               border: Border.all(color: const Color(0xFF1E90FF), width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1E90FF).withOpacity(0.3),
+                  color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -1934,17 +1944,17 @@ class _ProfileBottomSheet extends StatelessWidget {
             email,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E90FF).withOpacity(0.15),
+              color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFF1E90FF).withOpacity(0.3),
+                color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
               ),
             ),
             child: Text(
@@ -1974,7 +1984,7 @@ class _ProfileBottomSheet extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 24),
-          Divider(color: Colors.white.withOpacity(0.1)),
+          Divider(color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 8),
           _MenuItem(
             icon: Icons.person_outline,
@@ -1997,7 +2007,7 @@ class _ProfileBottomSheet extends StatelessWidget {
             onTap: onHelpSupport,
           ),
           const SizedBox(height: 8),
-          Divider(color: Colors.white.withOpacity(0.1)),
+          Divider(color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
@@ -2010,7 +2020,9 @@ class _ProfileBottomSheet extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.15),
+                backgroundColor: const Color(
+                  0xFFFF3B5C,
+                ).withValues(alpha: 0.15),
                 foregroundColor: const Color(0xFFFF3B5C),
                 elevation: 0,
                 side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
@@ -2035,20 +2047,20 @@ class _InfoPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.06),
+      color: Colors.white.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.white.withOpacity(0.1)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: Colors.white.withOpacity(0.45)),
+        Icon(icon, size: 12, color: Colors.white.withValues(alpha: 0.45)),
         const SizedBox(width: 5),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.white.withOpacity(0.65),
+            color: Colors.white.withValues(alpha: 0.65),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -2074,10 +2086,10 @@ class _MenuItem extends StatelessWidget {
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.07),
+        color: Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: Colors.white.withOpacity(0.7), size: 18),
+      child: Icon(icon, color: Colors.white.withValues(alpha: 0.7), size: 18),
     ),
     title: Text(
       label,
@@ -2089,7 +2101,7 @@ class _MenuItem extends StatelessWidget {
     ),
     trailing: Icon(
       Icons.chevron_right,
-      color: Colors.white.withOpacity(0.3),
+      color: Colors.white.withValues(alpha: 0.3),
       size: 18,
     ),
   );
@@ -2260,7 +2272,9 @@ class _EditProfilePageState extends State<_EditProfilePage> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF1E90FF).withOpacity(0.25),
+                          color: const Color(
+                            0xFF1E90FF,
+                          ).withValues(alpha: 0.25),
                           blurRadius: 20,
                         ),
                       ],
@@ -2371,7 +2385,7 @@ class _EditProfilePageState extends State<_EditProfilePage> {
                   elevation: 0,
                   disabledBackgroundColor: const Color(
                     0xFF1E90FF,
-                  ).withOpacity(0.4),
+                  ).withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -2422,7 +2436,7 @@ class _SectionLabel extends StatelessWidget {
       Expanded(
         child: Container(
           height: 1,
-          color: const Color(0xFF1E90FF).withOpacity(0.2),
+          color: const Color(0xFF1E90FF).withValues(alpha: 0.2),
         ),
       ),
     ],
@@ -2454,15 +2468,15 @@ class _ProfileField extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.06),
+            color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: TextField(
             controller: controller,
@@ -2472,12 +2486,12 @@ class _ProfileField extends StatelessWidget {
               hintText: hint,
               hintStyle: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
               ),
               prefixIcon: Icon(
                 icon,
                 size: 18,
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -2549,10 +2563,10 @@ class _SettingsPageState extends State<_SettingsPage> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: const Color(0xFF1E90FF).withOpacity(0.2),
+                  color: const Color(0xFF1E90FF).withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -2562,9 +2576,9 @@ class _SettingsPageState extends State<_SettingsPage> {
                     height: 52,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF1E90FF).withOpacity(0.15),
+                      color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
                       border: Border.all(
-                        color: const Color(0xFF1E90FF).withOpacity(0.4),
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.4),
                         width: 1.5,
                       ),
                     ),
@@ -2599,7 +2613,7 @@ class _SettingsPageState extends State<_SettingsPage> {
                           widget.email,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.45),
+                            color: Colors.white.withValues(alpha: 0.45),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -2609,7 +2623,9 @@ class _SettingsPageState extends State<_SettingsPage> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E90FF).withOpacity(0.12),
+                            color: const Color(
+                              0xFF1E90FF,
+                            ).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -2726,7 +2742,7 @@ class _SettingsPageState extends State<_SettingsPage> {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00C9A7).withOpacity(0.12),
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
@@ -2758,7 +2774,9 @@ class _SettingsPageState extends State<_SettingsPage> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.12),
+                  backgroundColor: const Color(
+                    0xFFFF3B5C,
+                  ).withValues(alpha: 0.12),
                   foregroundColor: const Color(0xFFFF3B5C),
                   elevation: 0,
                   side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
@@ -2783,9 +2801,9 @@ class _SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.05),
+      color: Colors.white.withValues(alpha: 0.05),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: Colors.white.withOpacity(0.09)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
     ),
     child: Column(children: children),
   );
@@ -2798,7 +2816,7 @@ class _Divider extends StatelessWidget {
     thickness: 1,
     indent: 56,
     endIndent: 16,
-    color: Colors.white.withOpacity(0.07),
+    color: Colors.white.withValues(alpha: 0.07),
   );
 }
 
@@ -2827,7 +2845,7 @@ class _ToggleTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.12),
+            color: iconColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: iconColor, size: 18),
@@ -2850,7 +2868,7 @@ class _ToggleTile extends StatelessWidget {
                 subtitle,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                 ),
               ),
             ],
@@ -2860,9 +2878,9 @@ class _ToggleTile extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeColor: const Color(0xFF1E90FF),
-          activeTrackColor: const Color(0xFF1E90FF).withOpacity(0.3),
-          inactiveThumbColor: Colors.white.withOpacity(0.4),
-          inactiveTrackColor: Colors.white.withOpacity(0.1),
+          activeTrackColor: const Color(0xFF1E90FF).withValues(alpha: 0.3),
+          inactiveThumbColor: Colors.white.withValues(alpha: 0.4),
+          inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
         ),
       ],
     ),
@@ -2897,7 +2915,7 @@ class _TapTile extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.12),
+              color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 18),
@@ -2920,7 +2938,7 @@ class _TapTile extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -2930,7 +2948,7 @@ class _TapTile extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
               ),
         ],
       ),
@@ -2963,9 +2981,11 @@ class _ConnectionTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF00C9A7).withOpacity(0.05),
+        color: const Color(0xFF00C9A7).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF00C9A7).withOpacity(0.25)),
+        border: Border.all(
+          color: const Color(0xFF00C9A7).withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         children: [
@@ -2974,9 +2994,9 @@ class _ConnectionTile extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF00C9A7).withOpacity(0.15),
+              color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
               border: Border.all(
-                color: const Color(0xFF00C9A7).withOpacity(0.4),
+                color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
@@ -3017,7 +3037,7 @@ class _ConnectionTile extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00C9A7).withOpacity(0.12),
+                        color: const Color(0xFF00C9A7).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: const Text(
@@ -3061,7 +3081,7 @@ class _ConnectionTile extends StatelessWidget {
                             fontSize: 12,
                             color: alumniEmail.isNotEmpty
                                 ? const Color(0xFF1E90FF)
-                                : Colors.white.withOpacity(0.35),
+                                : Colors.white.withValues(alpha: 0.35),
                             decoration: alumniEmail.isNotEmpty
                                 ? TextDecoration.underline
                                 : TextDecoration.none,
@@ -3099,10 +3119,10 @@ class _ConnectionTile extends StatelessWidget {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E90FF).withOpacity(0.12),
+                  color: const Color(0xFF1E90FF).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: const Color(0xFF1E90FF).withOpacity(0.3),
+                    color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
                   ),
                 ),
                 child: const Icon(
@@ -3206,7 +3226,7 @@ class _ExploreTabState extends State<_ExploreTab> {
                   'Search jobs and alumni',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -3214,16 +3234,18 @@ class _ExploreTabState extends State<_ExploreTab> {
                 Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
+                    color: Colors.white.withValues(alpha: 0.07),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.12)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
                   ),
                   child: Row(
                     children: [
                       const SizedBox(width: 14),
                       Icon(
                         Icons.search,
-                        color: Colors.white.withOpacity(0.35),
+                        color: Colors.white.withValues(alpha: 0.35),
                         size: 20,
                       ),
                       const SizedBox(width: 10),
@@ -3240,7 +3262,7 @@ class _ExploreTabState extends State<_ExploreTab> {
                             hintText: 'Search jobs, companies, alumni...',
                             hintStyle: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -3258,7 +3280,7 @@ class _ExploreTabState extends State<_ExploreTab> {
                             child: Icon(
                               Icons.close,
                               size: 16,
-                              color: Colors.white.withOpacity(0.4),
+                              color: Colors.white.withValues(alpha: 0.4),
                             ),
                           ),
                         ),
@@ -3320,7 +3342,7 @@ class _ExploreTabState extends State<_ExploreTab> {
                               : 'No jobs found for "$_query"',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -3360,7 +3382,7 @@ class _ExploreTabState extends State<_ExploreTab> {
                               : 'No alumni found for "$_query"',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                       ),
@@ -3404,12 +3426,12 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: active
               ? const Color(0xFF1E90FF)
-              : Colors.white.withOpacity(0.07),
+              : Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: active
                 ? const Color(0xFF1E90FF)
-                : Colors.white.withOpacity(0.12),
+                : Colors.white.withValues(alpha: 0.12),
           ),
         ),
         child: Text(
@@ -3417,7 +3439,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: active ? Colors.white : Colors.white.withOpacity(0.5),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.5),
           ),
         ),
       ),
@@ -3454,9 +3476,9 @@ class _AlumniListTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.09)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
       ),
       child: Row(
         children: [
@@ -3465,8 +3487,8 @@ class _AlumniListTile extends StatelessWidget {
             height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: c.withOpacity(0.15),
-              border: Border.all(color: c.withOpacity(0.4), width: 1.5),
+              color: c.withValues(alpha: 0.15),
+              border: Border.all(color: c.withValues(alpha: 0.4), width: 1.5),
             ),
             child: Center(
               child: Text(
@@ -3497,7 +3519,7 @@ class _AlumniListTile extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
                 if (batch.isNotEmpty) ...[
@@ -3508,7 +3530,7 @@ class _AlumniListTile extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: c.withOpacity(0.12),
+                      color: c.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
@@ -3531,13 +3553,13 @@ class _AlumniListTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
                 color: isPending
-                    ? Colors.white.withOpacity(0.06)
-                    : c.withOpacity(0.15),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : c.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isPending
-                      ? Colors.white.withOpacity(0.12)
-                      : c.withOpacity(0.4),
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : c.withValues(alpha: 0.4),
                 ),
               ),
               child: Text(
@@ -3545,7 +3567,7 @@ class _AlumniListTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: isPending ? Colors.white.withOpacity(0.35) : c,
+                  color: isPending ? Colors.white.withValues(alpha: 0.35) : c,
                 ),
               ),
             ),
@@ -3613,14 +3635,14 @@ class _SavedJobsTab extends StatelessWidget {
                         Icon(
                           Icons.bookmark_outline,
                           size: 52,
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
                         const SizedBox(height: 14),
                         Text(
                           'No saved jobs yet',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -3629,7 +3651,7 @@ class _SavedJobsTab extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                           ),
                         ),
                       ],
@@ -3665,9 +3687,11 @@ class _SavedJobCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF1E90FF).withOpacity(0.2)),
+        border: Border.all(
+          color: const Color(0xFF1E90FF).withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3678,9 +3702,9 @@ class _SavedJobCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  color: c.withOpacity(0.15),
+                  color: c.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: c.withOpacity(0.3)),
+                  border: Border.all(color: c.withValues(alpha: 0.3)),
                 ),
                 child: Icon(Icons.business_center, color: c, size: 22),
               ),
@@ -3702,7 +3726,7 @@ class _SavedJobCard extends StatelessWidget {
                       job['company'],
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -3714,10 +3738,10 @@ class _SavedJobCard extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E90FF).withOpacity(0.15),
+                    color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: const Color(0xFF1E90FF).withOpacity(0.4),
+                      color: const Color(0xFF1E90FF).withValues(alpha: 0.4),
                     ),
                   ),
                   child: const Icon(
@@ -3736,7 +3760,7 @@ class _SavedJobCard extends StatelessWidget {
                 Icon(
                   Icons.location_on_outlined,
                   size: 12,
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 3),
                 Flexible(
@@ -3744,7 +3768,7 @@ class _SavedJobCard extends StatelessWidget {
                     job['location'],
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                 ),
@@ -3753,7 +3777,7 @@ class _SavedJobCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: c.withOpacity(0.12),
+                  color: c.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -3830,7 +3854,7 @@ class _JobFilterChip extends StatelessWidget {
           border: Border.all(
             color: active
                 ? const Color(0xFF1E90FF)
-                : Colors.white.withOpacity(0.15),
+                : Colors.white.withValues(alpha: 0.15),
           ),
         ),
         child: Text(
@@ -3873,7 +3897,7 @@ class _BottomNav extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF0D1B2E),
           border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.07)),
+            top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
           ),
         ),
         child: Row(
@@ -3894,7 +3918,7 @@ class _BottomNav extends StatelessWidget {
                           : _items[i]['icon'] as IconData,
                       color: active
                           ? const Color(0xFF1E90FF)
-                          : Colors.white.withOpacity(0.35),
+                          : Colors.white.withValues(alpha: 0.35),
                       size: 22,
                     ),
                     const SizedBox(height: 4),
@@ -3905,7 +3929,7 @@ class _BottomNav extends StatelessWidget {
                         fontWeight: active ? FontWeight.w700 : FontWeight.w400,
                         color: active
                             ? const Color(0xFF1E90FF)
-                            : Colors.white.withOpacity(0.35),
+                            : Colors.white.withValues(alpha: 0.35),
                       ),
                     ),
                   ],

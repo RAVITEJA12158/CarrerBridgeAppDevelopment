@@ -210,7 +210,10 @@ class _AdminHomePageState extends State<AdminHomePage>
         ),
         content: Text(
           'Are you sure you want to delete "$userName"?\nThis cannot be undone.',
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 14,
+          ),
         ),
         actions: [
           TextButton(
@@ -270,7 +273,7 @@ class _AdminHomePageState extends State<AdminHomePage>
         ),
         content: Text(
           'Delete "$jobTitle"?',
-          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
         ),
         actions: [
           TextButton(
@@ -338,7 +341,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -369,12 +372,12 @@ class _AdminHomePageState extends State<AdminHomePage>
                               decoration: BoxDecoration(
                                 color: _jobTypeSelected == t
                                     ? const Color(0xFFFF6B35)
-                                    : Colors.white.withOpacity(0.07),
+                                    : Colors.white.withValues(alpha: 0.07),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: _jobTypeSelected == t
                                       ? const Color(0xFFFF6B35)
-                                      : Colors.white.withOpacity(0.15),
+                                      : Colors.white.withValues(alpha: 0.15),
                                 ),
                               ),
                               child: Text(
@@ -384,7 +387,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                   fontWeight: FontWeight.w600,
                                   color: _jobTypeSelected == t
                                       ? Colors.white
-                                      : Colors.white.withOpacity(0.6),
+                                      : Colors.white.withValues(alpha: 0.6),
                                 ),
                               ),
                             ),
@@ -439,6 +442,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                 'postedBy':
                                     FirebaseAuth.instance.currentUser?.uid ??
                                     '',
+                                'postedByRole': 'admin',
                                 'createdAt': FieldValue.serverTimestamp(),
                               });
                           if (!mounted) return;
@@ -496,7 +500,7 @@ class _AdminHomePageState extends State<AdminHomePage>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -506,9 +510,9 @@ class _AdminHomePageState extends State<AdminHomePage>
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: (user['color'] as Color).withOpacity(0.15),
+                color: (user['color'] as Color).withValues(alpha: 0.15),
                 border: Border.all(
-                  color: (user['color'] as Color).withOpacity(0.4),
+                  color: (user['color'] as Color).withValues(alpha: 0.4),
                   width: 2,
                 ),
               ),
@@ -536,10 +540,10 @@ class _AdminHomePageState extends State<AdminHomePage>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
               decoration: BoxDecoration(
-                color: _roleColor(user['role']).withOpacity(0.12),
+                color: _roleColor(user['role']).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _roleColor(user['role']).withOpacity(0.3),
+                  color: _roleColor(user['role']).withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
@@ -552,7 +556,7 @@ class _AdminHomePageState extends State<AdminHomePage>
               ),
             ),
             const SizedBox(height: 16),
-            Divider(color: Colors.white.withOpacity(0.1)),
+            Divider(color: Colors.white.withValues(alpha: 0.1)),
             const SizedBox(height: 8),
             _detailRow(Icons.email_outlined, user['email']),
             if (user['phone'].toString().isNotEmpty)
@@ -587,7 +591,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.12),
+                  backgroundColor: const Color(
+                    0xFFFF3B5C,
+                  ).withValues(alpha: 0.12),
                   foregroundColor: const Color(0xFFFF3B5C),
                   elevation: 0,
                   side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),
@@ -658,18 +664,21 @@ class _AdminHomePageState extends State<AdminHomePage>
     style: const TextStyle(color: Colors.white, fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.28), fontSize: 13),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.28),
+        fontSize: 13,
+      ),
       prefixIcon: Icon(icon, color: const Color(0xFFFF6B35), size: 19),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.06),
+      fillColor: Colors.white.withValues(alpha: 0.06),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -689,7 +698,7 @@ class _AdminHomePageState extends State<AdminHomePage>
             text,
             style: TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.75),
+              color: Colors.white.withValues(alpha: 0.75),
             ),
           ),
         ),
@@ -701,9 +710,9 @@ class _AdminHomePageState extends State<AdminHomePage>
     width: 40,
     height: 40,
     decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.07),
+      color: Colors.white.withValues(alpha: 0.07),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white.withOpacity(0.1)),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
     ),
     child: IconButton(
       icon: Icon(icon, color: Colors.white, size: 20),
@@ -723,9 +732,9 @@ class _AdminHomePageState extends State<AdminHomePage>
       width: 100,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -734,7 +743,7 @@ class _AdminHomePageState extends State<AdminHomePage>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),
@@ -746,7 +755,7 @@ class _AdminHomePageState extends State<AdminHomePage>
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white.withValues(alpha: 0.85),
             ),
           ),
         ],
@@ -802,7 +811,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                 'Admin Dashboard 🛡️',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: Colors.white.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -865,7 +874,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                       indicatorColor: const Color(0xFFFF6B35),
                       indicatorWeight: 2.5,
                       labelColor: const Color(0xFFFF6B35),
-                      unselectedLabelColor: Colors.white.withOpacity(0.4),
+                      unselectedLabelColor: Colors.white.withValues(alpha: 0.4),
                       labelStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -1039,7 +1048,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                 '${_allUsers.length} users found',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.45),
+                                  color: Colors.white.withValues(alpha: 0.45),
                                 ),
                               ),
                               GestureDetector(
@@ -1069,7 +1078,9 @@ class _AdminHomePageState extends State<AdminHomePage>
                                   child: Text(
                                     'No users found.',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.35),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -1107,7 +1118,7 @@ class _AdminHomePageState extends State<AdminHomePage>
                                 '${_jobs.length} jobs posted',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.white.withOpacity(0.45),
+                                  color: Colors.white.withValues(alpha: 0.45),
                                 ),
                               ),
                               GestureDetector(
@@ -1149,14 +1160,18 @@ class _AdminHomePageState extends State<AdminHomePage>
                                     children: [
                                       Icon(
                                         Icons.work_off_outlined,
-                                        color: Colors.white.withOpacity(0.25),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.25,
+                                        ),
                                         size: 40,
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
                                         'No jobs posted yet.',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.35),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.35,
+                                          ),
                                           fontSize: 14,
                                         ),
                                       ),
@@ -1262,9 +1277,9 @@ class _UserTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
+          color: Colors.white.withValues(alpha: 0.04),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Row(
           children: [
@@ -1273,8 +1288,11 @@ class _UserTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: c.withOpacity(0.15),
-                border: Border.all(color: c.withOpacity(0.35), width: 1.5),
+                color: c.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: c.withValues(alpha: 0.35),
+                  width: 1.5,
+                ),
               ),
               child: Center(
                 child: Text(
@@ -1305,7 +1323,7 @@ class _UserTile extends StatelessWidget {
                       sub,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withOpacity(0.45),
+                        color: Colors.white.withValues(alpha: 0.45),
                       ),
                     ),
                 ],
@@ -1314,7 +1332,7 @@ class _UserTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: roleColor.withOpacity(0.12),
+                color: roleColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1333,7 +1351,7 @@ class _UserTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF3B5C).withOpacity(0.1),
+                  color: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -1364,9 +1382,9 @@ class _JobTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
@@ -1374,10 +1392,10 @@ class _JobTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF6B35).withOpacity(0.12),
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFFFF6B35).withOpacity(0.3),
+                color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
               ),
             ),
             child: const Icon(
@@ -1404,7 +1422,7 @@ class _JobTile extends StatelessWidget {
                   job['company'] ?? '',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1414,14 +1432,14 @@ class _JobTile extends StatelessWidget {
                       Icon(
                         Icons.location_on_outlined,
                         size: 11,
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                       ),
                       const SizedBox(width: 3),
                       Text(
                         job['location'],
                         style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1432,7 +1450,7 @@ class _JobTile extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF6B35).withOpacity(0.12),
+                        color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Text(
@@ -1455,7 +1473,7 @@ class _JobTile extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFFF3B5C).withOpacity(0.1),
+                color: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -1489,9 +1507,9 @@ class _StatCard extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1510,7 +1528,7 @@ class _StatCard extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              color: Colors.white.withOpacity(0.45),
+              color: Colors.white.withValues(alpha: 0.45),
             ),
           ),
         ],
@@ -1541,12 +1559,12 @@ class _FilterChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected
             ? const Color(0xFFFF6B35)
-            : Colors.white.withOpacity(0.07),
+            : Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: selected
               ? const Color(0xFFFF6B35)
-              : Colors.white.withOpacity(0.15),
+              : Colors.white.withValues(alpha: 0.15),
         ),
       ),
       child: Text(
@@ -1554,7 +1572,7 @@ class _FilterChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: selected ? Colors.white : Colors.white.withOpacity(0.6),
+          color: selected ? Colors.white : Colors.white.withValues(alpha: 0.6),
         ),
       ),
     ),
@@ -1596,7 +1614,7 @@ class _AdminProfileSheet extends StatelessWidget {
           width: 40,
           height: 4,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -1628,15 +1646,20 @@ class _AdminProfileSheet extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           email,
-          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.5),
+          ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF6B35).withOpacity(0.12),
+            color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFFF6B35).withOpacity(0.3)),
+            border: Border.all(
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.3),
+            ),
           ),
           child: const Text(
             'Admin',
@@ -1661,14 +1684,14 @@ class _AdminProfileSheet extends StatelessWidget {
                 department,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
             ],
           ),
         ],
         const SizedBox(height: 16),
-        Divider(color: Colors.white.withOpacity(0.1)),
+        Divider(color: Colors.white.withValues(alpha: 0.1)),
         const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
@@ -1681,7 +1704,7 @@ class _AdminProfileSheet extends StatelessWidget {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF3B5C).withOpacity(0.12),
+              backgroundColor: const Color(0xFFFF3B5C).withValues(alpha: 0.12),
               foregroundColor: const Color(0xFFFF3B5C),
               elevation: 0,
               side: const BorderSide(color: Color(0xFFFF3B5C), width: 1),

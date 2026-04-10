@@ -350,10 +350,10 @@ class _registerPageState extends State<registerPage>
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.07),
+                            color: Colors.white.withValues(alpha: 0.07),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.12),
+                              color: Colors.white.withValues(alpha: 0.12),
                             ),
                           ),
                           child: const Icon(
@@ -395,9 +395,11 @@ class _registerPageState extends State<registerPage>
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
+                      color: Colors.white.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     child: Row(
                       children: List.generate(3, (i) {
@@ -420,7 +422,7 @@ class _registerPageState extends State<registerPage>
                                         BoxShadow(
                                           color: const Color(
                                             0xFF1E90FF,
-                                          ).withOpacity(0.4),
+                                          ).withValues(alpha: 0.4),
                                           blurRadius: 12,
                                           offset: const Offset(0, 4),
                                         ),
@@ -464,12 +466,14 @@ class _registerPageState extends State<registerPage>
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.07),
+                      color: Colors.white.withValues(alpha: 0.07),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.12)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         ),
@@ -602,7 +606,7 @@ class _registerPageState extends State<registerPage>
                             'Min 8 chars · Uppercase · Lowercase · Number · Special char',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.white.withOpacity(0.38),
+                              color: Colors.white.withValues(alpha: 0.38),
                             ),
                           ),
                         ),
@@ -639,7 +643,7 @@ class _registerPageState extends State<registerPage>
                         foregroundColor: Colors.white,
                         disabledBackgroundColor: const Color(
                           0xFF1E90FF,
-                        ).withOpacity(0.5),
+                        ).withValues(alpha: 0.5),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -703,7 +707,7 @@ class _registerPageState extends State<registerPage>
   Widget _dividerLabel(String text) => Row(
     children: [
       Expanded(
-        child: Divider(color: Colors.white.withOpacity(0.12), height: 1),
+        child: Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -711,13 +715,13 @@ class _registerPageState extends State<registerPage>
           text,
           style: TextStyle(
             fontSize: 11,
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
             letterSpacing: 0.5,
           ),
         ),
       ),
       Expanded(
-        child: Divider(color: Colors.white.withOpacity(0.12), height: 1),
+        child: Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
       ),
     ],
   );
@@ -735,18 +739,21 @@ class _registerPageState extends State<registerPage>
     style: const TextStyle(color: Colors.white, fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.28), fontSize: 13),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.28),
+        fontSize: 13,
+      ),
       prefixIcon: Icon(icon, color: const Color(0xFF1E90FF), size: 19),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.06),
+      fillColor: Colors.white.withValues(alpha: 0.06),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -766,7 +773,10 @@ class _registerPageState extends State<registerPage>
     style: const TextStyle(color: Colors.white, fontSize: 14),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.28), fontSize: 13),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.28),
+        fontSize: 13,
+      ),
       prefixIcon: const Icon(
         Icons.lock_outline,
         color: Color(0xFF1E90FF),
@@ -781,15 +791,15 @@ class _registerPageState extends State<registerPage>
         onPressed: toggle,
       ),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.06),
+      fillColor: Colors.white.withValues(alpha: 0.06),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -810,17 +820,20 @@ class _registerPageState extends State<registerPage>
         size: 19,
       ),
       hintText: 'Select your branch',
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.28), fontSize: 13),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.28),
+        fontSize: 13,
+      ),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.06),
+      fillColor: Colors.white.withValues(alpha: 0.06),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

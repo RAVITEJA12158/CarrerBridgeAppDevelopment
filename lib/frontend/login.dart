@@ -71,7 +71,7 @@ class _loginPageState extends State<loginPage>
 
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Dialog(
           backgroundColor: const Color(0xFF0D1B2E),
@@ -91,10 +91,10 @@ class _loginPageState extends State<loginPage>
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E90FF).withOpacity(0.15),
+                        color: const Color(0xFF1E90FF).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF1E90FF).withOpacity(0.3),
+                          color: const Color(0xFF1E90FF).withValues(alpha: 0.3),
                         ),
                       ),
                       child: const Icon(
@@ -147,7 +147,7 @@ class _loginPageState extends State<loginPage>
                   decoration: InputDecoration(
                     hintText: 'you@example.com',
                     hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.28),
+                      color: Colors.white.withValues(alpha: 0.28),
                       fontSize: 13,
                     ),
                     prefixIcon: const Icon(
@@ -156,7 +156,7 @@ class _loginPageState extends State<loginPage>
                       size: 19,
                     ),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.06),
+                    fillColor: Colors.white.withValues(alpha: 0.06),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 13,
@@ -164,13 +164,13 @@ class _loginPageState extends State<loginPage>
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -251,12 +251,12 @@ class _loginPageState extends State<loginPage>
                                               decoration: BoxDecoration(
                                                 color: const Color(
                                                   0xFF00C9A7,
-                                                ).withOpacity(0.15),
+                                                ).withValues(alpha: 0.15),
                                                 shape: BoxShape.circle,
                                                 border: Border.all(
                                                   color: const Color(
                                                     0xFF00C9A7,
-                                                  ).withOpacity(0.4),
+                                                  ).withValues(alpha: 0.4),
                                                   width: 1.5,
                                                 ),
                                               ),
@@ -281,8 +281,8 @@ class _loginPageState extends State<loginPage>
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 fontSize: 13,
-                                                color: Colors.white.withOpacity(
-                                                  0.6,
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.6,
                                                 ),
                                                 height: 1.6,
                                               ),
@@ -351,7 +351,7 @@ class _loginPageState extends State<loginPage>
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           disabledBackgroundColor: const Color(
                             0xFF1E90FF,
-                          ).withOpacity(0.5),
+                          ).withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -391,8 +391,7 @@ class _loginPageState extends State<loginPage>
       return;
     }
 
-    
-    const String adminSecretCode = 'ADMIN@2025'; 
+    const String adminSecretCode = 'ADMIN@2025';
     if (roles[selectedRole] == 'admin') {
       if (adminCodeController.text.trim().isEmpty) {
         _showSnack("Please enter the Admin Access Code.");
@@ -523,10 +522,14 @@ class _loginPageState extends State<loginPage>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E90FF).withOpacity(0.2),
+                            color: const Color(
+                              0xFF1E90FF,
+                            ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF1E90FF).withOpacity(0.4),
+                              color: const Color(
+                                0xFF1E90FF,
+                              ).withValues(alpha: 0.4),
                             ),
                           ),
                           child: const Icon(
@@ -583,10 +586,10 @@ class _loginPageState extends State<loginPage>
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.06),
+                        color: Colors.white.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -611,7 +614,7 @@ class _loginPageState extends State<loginPage>
                                           BoxShadow(
                                             color: const Color(
                                               0xFF1E90FF,
-                                            ).withOpacity(0.4),
+                                            ).withValues(alpha: 0.4),
                                             blurRadius: 12,
                                             offset: const Offset(0, 4),
                                           ),
@@ -655,14 +658,14 @@ class _loginPageState extends State<loginPage>
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.07),
+                        color: Colors.white.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             blurRadius: 30,
                             offset: const Offset(0, 10),
                           ),
@@ -814,7 +817,7 @@ class _loginPageState extends State<loginPage>
                         '© 2025 CareerBridge. All rights reserved.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                         ),
                       ),
                     ),
@@ -841,7 +844,10 @@ class _loginPageState extends State<loginPage>
     style: const TextStyle(color: Colors.white, fontSize: 15),
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 14),
+      hintStyle: TextStyle(
+        color: Colors.white.withValues(alpha: 0.3),
+        fontSize: 14,
+      ),
       prefixIcon: Icon(icon, color: const Color(0xFF1E90FF), size: 20),
       suffixIcon: isPassword
           ? IconButton(
@@ -857,15 +863,15 @@ class _loginPageState extends State<loginPage>
             )
           : null,
       filled: true,
-      fillColor: Colors.white.withOpacity(0.07),
+      fillColor: Colors.white.withValues(alpha: 0.07),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
